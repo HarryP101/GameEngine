@@ -1389,12 +1389,12 @@ namespace olc
 
 	Pixel Sprite::SampleBL(float u, float v) const
 	{
-		u = u * width - 0.5f;
-		v = v * height - 0.5f;
+		u = u * static_cast<float>(width) - 0.5f;
+		v = v * static_cast<float>(height) - 0.5f;
 		int x = (int)floor(u); // cast to int rounds toward zero, not downward
 		int y = (int)floor(v); // Thanks @joshinils
-		float u_ratio = u - x;
-		float v_ratio = v - y;
+		float u_ratio = u - static_cast<float>(x);
+		float v_ratio = v - static_cast<float>(y);
 		float u_opposite = 1 - u_ratio;
 		float v_opposite = 1 - v_ratio;
 
@@ -1551,7 +1551,7 @@ namespace olc
 
 		std::vector<char> buffer(nIndexSize);
 		for (uint32_t j = 0; j < nIndexSize; j++)
-			buffer[j] = baseFile.get();
+			buffer[j] = static_cast<char>(baseFile.get());
 
 		std::vector<char> decoded = scramble(buffer, sKey);
 		size_t pos = 0;
@@ -1571,8 +1571,8 @@ namespace olc
 			read((char*)&nFilePathSize, sizeof(uint32_t));
 
 			std::string sFileName(nFilePathSize, ' ');
-			for (uint32_t j = 0; j < nFilePathSize; j++)
-				sFileName[j] = get();
+			for (size_t j = 0; j < nFilePathSize; j++)
+				sFileName[j] = static_cast<char>(get());
 
 			sResourceFile e;
 			read((char*)&e.nSize, sizeof(uint32_t));
@@ -2639,7 +2639,8 @@ namespace olc
 		di.pos[1] = (olc::vf2d(0.0f, float(decal->sprite->height)) - center) * scale;
 		di.pos[2] = (olc::vf2d(float(decal->sprite->width), float(decal->sprite->height)) - center) * scale;
 		di.pos[3] = (olc::vf2d(float(decal->sprite->width), 0.0f) - center) * scale;
-		float c = cos(fAngle), s = sin(fAngle);
+		float c = static_cast<float>(cos(fAngle));
+		float s = static_cast<float>(sin(fAngle));
 		for (int i = 0; i < 4; i++)
 		{
 			di.pos[i] = pos + olc::vf2d(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
@@ -2665,7 +2666,8 @@ namespace olc
 		di.pos[1] = (olc::vf2d(0.0f, source_size.y) - center) * scale;
 		di.pos[2] = (olc::vf2d(source_size.x, source_size.y) - center) * scale;
 		di.pos[3] = (olc::vf2d(source_size.x, 0.0f) - center) * scale;
-		float c = cos(fAngle), s = sin(fAngle);
+		float c = static_cast<float>(cos(fAngle));
+		float s = static_cast<float>(sin(fAngle));
 		for (int i = 0; i < 4; i++)
 		{
 			di.pos[i] = pos + olc::vf2d(di.pos[i].x * c - di.pos[i].y * s, di.pos[i].x * s + di.pos[i].y * c);
@@ -3271,7 +3273,7 @@ namespace olc
 		data += "?P9PL020O`<`N3R0@E4HC7b0@ET<ATB0@@l6C4B0O`H3N7b0?P01L3R000000020";
 
 		fontSprite = new olc::Sprite(128, 48);
-		int px = 0, py = 0;
+		int32_t px = 0, py = 0;
 		for (size_t b = 0; b < 1024; b += 4)
 		{
 			uint32_t sym1 = (uint32_t)data[b + 0] - 48;
@@ -3283,7 +3285,8 @@ namespace olc
 			for (int i = 0; i < 24; i++)
 			{
 				int k = r & (1 << i) ? 255 : 0;
-				fontSprite->SetPixel(px, py, olc::Pixel(k, k, k, k));
+				uint8_t k8 = static_cast<uint8_t>(k);
+				fontSprite->SetPixel(px, py, olc::Pixel(k8, k8, k8, k8));
 				if (++py == 48) { px++; py = 0; }
 			}
 		}
