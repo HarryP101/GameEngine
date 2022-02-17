@@ -11,6 +11,6 @@ public:
     void SetRow(size_t rowNumber, double col1, double col2, double col3, double col4);
 
     friend std::ostream& operator<<(std::ostream& stream, const Matrix4x4& matrix4x4);
-private:
+protected:
     std::vector<double> m_data;
 };

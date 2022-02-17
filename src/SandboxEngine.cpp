@@ -5,8 +5,9 @@
 #include "Triangle.h"
 #include "Vector3D.h"
 #include "Constants.h"
+#include "RotationMatrix4x4.h"
 
-SandboxEngine::SandboxEngine() : m_theta(0.0)
+SandboxEngine::SandboxEngine() : m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0)
 {
     sAppName = "Harrys Example";
 }
@@ -14,46 +15,9 @@ SandboxEngine::SandboxEngine() : m_theta(0.0)
 bool SandboxEngine::OnUserCreate()
 {
     // Called once at the start, so create things here
-    typedef Vector3D Point;
 
     // Set up unit cube
-
-    // South
-    Triangle tri1(Point(0.0, 0.0, 0.0), Point(0.0, 1.0, 0.0), Point(1.0, 1.0, 0.0));
-    Triangle tri2(Point(0.0, 0.0, 0.0), Point(1.0, 1.0, 0.0), Point(1.0, 0.0, 0.0));
-
-    // East
-    Triangle tri3(Point(1.0, 0.0, 0.0), Point(1.0, 1.0, 0.0), Point(1.0, 1.0, 1.0));
-    Triangle tri4(Point(1.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0));
-
-    // North
-    Triangle tri5(Point(1.0, 0.0, 1.0), Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 1.0));
-    Triangle tri6(Point(1.0, 0.0, 1.0), Point(0.0, 1.0, 1.0), Point(0.0, 0.0, 1.0));
-
-    // West
-    Triangle tri7(Point(0.0, 0.0, 1.0), Point(0.0, 1.0, 1.0), Point(0.0, 1.0, 0.0));
-    Triangle tri8(Point(0.0, 0.0, 1.0), Point(0.0, 1.0, 0.0), Point(0.0, 0.0, 0.0));
-
-    // Top
-    Triangle tri9(Point(0.0, 1.0, 0.0), Point(0.0, 1.0, 1.0), Point(1.0, 1.0, 1.0));
-    Triangle tri10(Point(0.0, 1.0, 0.0), Point(1.0, 1.0, 1.0), Point(1.0, 1.0, 0.0));
-
-    // Bottom
-    Triangle tri11(Point(1.0, 0.0, 1.0), Point(0.0, 0.0, 1.0), Point(0.0, 0.0, 0.0));
-    Triangle tri12(Point(1.0, 0.0, 1.0), Point(0.0, 0.0, 0.0), Point(1.0, 0.0, 0.0));
-
-    m_meshCube.AddTriangle(tri1);
-    m_meshCube.AddTriangle(tri2);
-    m_meshCube.AddTriangle(tri3);
-    m_meshCube.AddTriangle(tri4);
-    m_meshCube.AddTriangle(tri5);
-    m_meshCube.AddTriangle(tri6);
-    m_meshCube.AddTriangle(tri7);
-    m_meshCube.AddTriangle(tri8);
-    m_meshCube.AddTriangle(tri9);
-    m_meshCube.AddTriangle(tri10);
-    m_meshCube.AddTriangle(tri11);
-    m_meshCube.AddTriangle(tri12);
+    m_meshCube = Mesh::CreateCube();
 
     // Set up projection matrix
     double zNear = 0.1;
@@ -76,17 +40,11 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     Matrix4x4 rotateZ;
     Matrix4x4 rotateX;
+
     m_theta += 1.0 * static_cast<double>(fElapsedTime);
 
-    rotateZ.SetRow(0, cos(m_theta), sin(m_theta), 0.0, 0.0);
-    rotateZ.SetRow(1, -sin(m_theta), cos(m_theta), 0.0, 0.0);
-    rotateZ.SetRow(2, 0.0, 0.0, 1.0, 0.0);
-    rotateZ.SetRow(3, 0.0, 0.0, 0.0, 1.0);
-
-    rotateX.SetRow(0, 1.0, 0.0, 0.0, 0.0);
-    rotateX.SetRow(1, 0.0, cos(m_theta * 0.5), sin(m_theta * 0.5), 0.0);
-    rotateX.SetRow(2, 0.0, -sin(m_theta * 0.5), cos(m_theta * 0.5), 0.0);
-    rotateX.SetRow(3, 0.0, 0.0, 0.0, 1.0);
+    m_rotateZ.Update(m_theta);
+    m_rotateX.Update(m_theta);
 
     // called once per frame
     auto triangles = m_meshCube.GetTriangles();
@@ -94,13 +52,13 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     // Draw triangles
     for (const auto& tri : triangles)
     {
-        Vector3D rotVert1 = tri.vert1 * rotateZ;
-        Vector3D rotVert2 = tri.vert2 * rotateZ;
-        Vector3D rotVert3 = tri.vert3 * rotateZ;
+        Vector3D rotVert1 = tri.vert1 * m_rotateZ;
+        Vector3D rotVert2 = tri.vert2 * m_rotateZ;
+        Vector3D rotVert3 = tri.vert3 * m_rotateZ;
 
-        rotVert1 = rotVert1 * rotateX;
-        rotVert2 = rotVert2 * rotateX;
-        rotVert3 = rotVert3 * rotateX;
+        rotVert1 = rotVert1 * m_rotateX;
+        rotVert2 = rotVert2 * m_rotateX;
+        rotVert3 = rotVert3 * m_rotateX;
 
         Vector3D translation(0.0, 0.0, 3.0);
         Vector3D transVert1 = rotVert1 + translation;
