@@ -16,7 +16,8 @@ CPPFLAGS ?= $(INC_FLAGS) -Wall -g -std=c++17 -Wno-unknown-pragmas
 CC = g++
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS)
+	@$(CC) $(OBJS) -o $@ $(LDFLAGS)
+	@echo "Linking Main"
 
 # assembly
 $(BUILD_DIR)/%.s.o: %.s
@@ -30,8 +31,9 @@ $(BUILD_DIR)/%.c.o: %.c
 
 # c++ source
 $(BUILD_DIR)/%.cpp.o: %.cpp
-	$(MKDIR_P) $(dir $@)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	@$(MKDIR_P) $(dir $@)
+	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	@echo "Compiling $<"
 
 
 .PHONY: clean
