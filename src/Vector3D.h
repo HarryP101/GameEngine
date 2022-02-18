@@ -20,7 +20,13 @@ public:
 
     Vector3D operator+(const Vector3D& rhs) const;
 
+    Vector3D operator-(const Vector3D& rhs) const;
+
     Vector3D operator*(const Matrix4x4& rhs) const;
+
+    Vector3D Cross(const Vector3D& rhs) const;
+
+    double Dot(const Vector3D& rhs) const;
 
 private:
     double m_x;

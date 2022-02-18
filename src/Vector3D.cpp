@@ -21,6 +21,11 @@ Vector3D Vector3D::operator+(const Vector3D& rhs) const
     return Vector3D(m_x + rhs.m_x, m_y + rhs.m_y, m_z + rhs.m_z);
 }
 
+Vector3D Vector3D::operator-(const Vector3D& rhs) const
+{
+    return Vector3D(m_x - rhs.m_x, m_y - rhs.m_y, m_z - rhs.m_z);
+}
+
 // This shouldnt be a member function, as it does something unexpected
 // Create new class "ProjectionHelper for example"
 Vector3D Vector3D::operator*(const Matrix4x4& rhs) const
@@ -38,6 +43,20 @@ Vector3D Vector3D::operator*(const Matrix4x4& rhs) const
         z /= w;
     }
     return Vector3D(x, y, z);
+}
+
+Vector3D Vector3D::Cross(const Vector3D& rhs) const
+{
+    double x = m_y * rhs.m_z - m_z * rhs.m_y;
+    double y = m_z * rhs.m_x - m_x * rhs.m_z;
+    double z = m_x * rhs.m_y - m_y * rhs.m_x;
+
+    return Vector3D(x, y, z);
+}
+
+double Vector3D::Dot(const Vector3D& rhs) const
+{
+    return m_x * rhs.m_x + m_y * rhs.m_y + m_z * rhs.m_z;
 }
 
 double Vector3D::GetX() const { return m_x; }
