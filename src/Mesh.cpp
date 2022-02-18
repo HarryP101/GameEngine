@@ -14,7 +14,7 @@ Mesh Mesh::CreateCube()
 
     // East
     Triangle tri3(Point(1.0, 0.0, 0.0), Point(1.0, 1.0, 0.0), Point(1.0, 1.0, 1.0));
-    Triangle tri4(Point(1.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 0.0));
+    Triangle tri4(Point(1.0, 0.0, 0.0), Point(1.0, 1.0, 1.0), Point(1.0, 0.0, 1.0));
 
     // North
     Triangle tri5(Point(1.0, 0.0, 1.0), Point(1.0, 1.0, 1.0), Point(0.0, 1.0, 1.0));

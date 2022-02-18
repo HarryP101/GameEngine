@@ -18,6 +18,8 @@ public:
     
     Vector3D Scale(const Vector3D& xyzScalingFactors) const;
 
+    void Normalise();
+
     Vector3D operator+(const Vector3D& rhs) const;
 
     Vector3D operator-(const Vector3D& rhs) const;

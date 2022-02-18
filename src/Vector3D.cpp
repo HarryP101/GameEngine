@@ -1,6 +1,7 @@
 #include "Vector3D.h"
 #include <cstdint>
 #include <iostream>
+#include <math.h>
 
 Vector3D::Vector3D(double x, double y, double z) : m_x(x), m_y(y), m_z(z) {};
 
@@ -14,6 +15,14 @@ Vector3D::Vector3D(const Vector3D& rhs)
 Vector3D Vector3D::Scale(const Vector3D& xyzScalingFactors) const
 {
     return Vector3D(m_x * xyzScalingFactors.GetX(), m_y * xyzScalingFactors.GetY(), m_z * xyzScalingFactors.GetZ());
+}
+
+void Vector3D::Normalise()
+{
+    double magnitude = std::sqrt(m_x * m_x + m_y * m_y + m_z * m_z);
+    m_x /= magnitude;
+    m_y /= magnitude;
+    m_z /= magnitude;
 }
 
 Vector3D Vector3D::operator+(const Vector3D& rhs) const

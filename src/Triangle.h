@@ -13,5 +13,5 @@ struct Triangle
 
     Vector3D vert1;
     Vector3D vert2;
-    Vector3D vert3;    
+    Vector3D vert3;
 };
