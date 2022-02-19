@@ -1,4 +1,11 @@
 #include "Mesh.h"
+#include <iostream>
+#include "ObjFileLoader.h"
+#include "Triangle.h"
+
+Mesh::Mesh() : m_triangles() {}
+
+Mesh::Mesh(const std::vector<Triangle>& triangles) : m_triangles(triangles) {}
 
 Mesh Mesh::CreateCube()
 {
@@ -44,6 +51,21 @@ Mesh Mesh::CreateCube()
     mesh.AddTriangle(tri10);
     mesh.AddTriangle(tri11);
     mesh.AddTriangle(tri12);
+
+    return mesh;
+}
+
+Mesh Mesh::CreateCoolShip(const std::string& location)
+{
+    Mesh mesh;
+    try 
+    {
+        mesh = ObjFileLoader::Load(location);
+    }
+    catch(std::runtime_error& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 
     return mesh;
 }

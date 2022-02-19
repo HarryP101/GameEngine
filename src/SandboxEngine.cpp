@@ -19,7 +19,7 @@ bool SandboxEngine::OnUserCreate()
     // Called once at the start, so create things here
 
     // Set up unit cube
-    m_meshCube = Mesh::CreateCube();
+    m_meshCube = Mesh::CreateCoolShip("sampleobjects/spaceshuttle.obj");
 
     // Set up projection matrix
     double zNear = 0.1;
@@ -55,7 +55,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
         tri *= m_rotateZ;
         tri *= m_rotateX;
 
-        Vector3D translation(0.0, 0.0, 3.0);
+        Vector3D translation(0.0, 0.0, 8.0);
         tri += translation;
 
         Vector3D line1 = tri.vert2 - tri.vert1;
