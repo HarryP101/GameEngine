@@ -3,5 +3,5 @@
 class Constants
 {
 public:
-    static constexpr double PI = 3.14159;
+    static constexpr double const& PI = 3.14159;
 };

@@ -17,7 +17,7 @@ Mesh ObjFileLoader::Load(const std::string& filename)
     }
     else
     {
-    // Local cache of vertices
+        // Local cache of vertices
         std::vector<Vector3D> vertices;
 
         std::vector<Triangle> triangles;

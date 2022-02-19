@@ -2,13 +2,13 @@
 
 #include "SandboxEngine.h"
 #include <algorithm>
+
 #include "Mesh.h"
 #include "Triangle.h"
 #include "Vector3D.h"
 #include "Constants.h"
 #include "RotationMatrix4x4.h"
 #include "Shader.h"
-
 
 SandboxEngine::SandboxEngine() : m_camera(0.0, 0.0, 0.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0)
 {
@@ -23,9 +23,9 @@ bool SandboxEngine::OnUserCreate()
     m_meshCube = Mesh::CreateCoolShip("sampleobjects/teapot.obj");
 
     // Set up projection matrix
-    double zNear = 0.1;
-    double zFar = 1000.0;
-    double fov = 90.0;
+    constexpr double zNear = 0.1;
+    constexpr double zFar = 1000.0;
+    constexpr double fov = 90.0;
     double aspectRatio = static_cast<double>(ScreenHeight()) / static_cast<double>(ScreenWidth());
     double fovRad = 1.0 / tan(((fov * 0.5) / 180.0) * Constants::PI);
 
@@ -49,6 +49,10 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
     Vector3D translation(0.0, 0.0, 8.0);
+    Vector3D one(1.0, 1.0, 0.0);
+    Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
+    Vector3D lightDirection(0.0, 0.0, -1.0);
+    lightDirection.Normalise();
 
     // called once per frame
     auto triangles = m_meshCube.GetTriangles();
@@ -70,9 +74,6 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
         if ((normal.Dot(tri.vert1 - m_camera)) < 0.0)
         {
             // Illumination
-            Vector3D lightDirection(0.0, 0.0, -1.0);
-            lightDirection.Normalise();
-
             double dp = normal.Dot(lightDirection);
 
             olc::Pixel s = Shader::GetColour(dp);
@@ -82,10 +83,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
             tri *= m_projectionMatrix;
 
             // Scale into view
-            Vector3D one(1.0, 1.0, 0.0);
             tri += one;
-
-            Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
             tri *= xyzScaling;
 
             trisToRaster.push_back(tri);

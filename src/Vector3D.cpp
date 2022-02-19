@@ -1,7 +1,12 @@
 #include "Vector3D.h"
 #include <cstdint>
 #include <iostream>
-#include <math.h>
+
+#if defined(__APPLE__)
+    #include <cmath>
+#else
+    #include <math.h>
+#endif
 
 Vector3D::Vector3D(double x, double y, double z) : m_x(x), m_y(y), m_z(z) {};
 

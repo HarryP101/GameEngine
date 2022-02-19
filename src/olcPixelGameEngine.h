@@ -512,7 +512,7 @@ namespace olc
 	// Pixel Game Engine Advanced Configuration
 	constexpr uint8_t  nMouseButtons = 5;
 	constexpr uint8_t  nDefaultAlpha = 0xFF;
-	constexpr uint32_t nDefaultPixel = (nDefaultAlpha << 24);
+	constexpr uint32_t nDefaultPixel = static_cast<uint32_t>(nDefaultAlpha << 24);
 	constexpr uint8_t  nTabSizeInSpaces = 4;
 	enum rcode { FAIL = 0, OK = 1, NO_FILE = -1 };
 
@@ -1139,12 +1139,12 @@ namespace olc
 		// State of keyboard		
 		bool		pKeyNewState[256] = { 0 };
 		bool		pKeyOldState[256] = { 0 };
-		HWButton	pKeyboardState[256] = { 0 };
+        HWButton	pKeyboardState[256] = { {0} };
 
 		// State of mouse
 		bool		pMouseNewState[nMouseButtons] = { 0 };
 		bool		pMouseOldState[nMouseButtons] = { 0 };
-		HWButton	pMouseState[nMouseButtons] = { 0 };
+        HWButton	pMouseState[nMouseButtons] = { {0} };
 
 		// The main engine thread
 		void		EngineThread();
@@ -1234,7 +1234,7 @@ namespace olc
 	{ r = 0; g = 0; b = 0; a = nDefaultAlpha; }
 
 	Pixel::Pixel(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha)
-	{ n = red | (green << 8) | (blue << 16) | (alpha << 24); } // Thanks jarekpelczar 
+	{ n = static_cast<uint32_t>(red | (green << 8) | (blue << 16) | (alpha << 24)); } // Thanks jarekpelczar
 
 	Pixel::Pixel(uint32_t p)
 	{ n = p; }
@@ -3386,7 +3386,7 @@ namespace olc
 		glRenderContext_t glRenderContext = 0;
 #endif
 
-		bool bSync = false;
+		//bool bSync = false;
 		olc::DecalMode nDecalMode = olc::DecalMode(-1); // Thanks Gusgo & Bispoo
 		olc::DecalStructure nDecalStructure = olc::DecalStructure(-1);
 #if defined(OLC_PLATFORM_X11)
@@ -3528,7 +3528,7 @@ namespace olc
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		}
 
-		void SetDecalMode(const olc::DecalMode& mode)
+		void SetDecalMode(const olc::DecalMode& mode) override
 		{
 			if (mode != nDecalMode)
 			{
