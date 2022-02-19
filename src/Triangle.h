@@ -2,6 +2,7 @@
 
 #include "Vector3D.h"
 #include "Matrix4x4.h"
+#include "olcPixelGameEngine.h"
 
 struct Triangle
 {
@@ -10,6 +11,10 @@ struct Triangle
     Triangle& operator+=(const Vector3D& rhs);
     Triangle& operator*=(const Matrix4x4& rhs);
     Triangle& operator*=(const Vector3D& xyzScaling);
+
+    Vector3D GetCentroid() const;
+
+    olc::Pixel illum;
 
     Vector3D vert1;
     Vector3D vert2;
