@@ -10,7 +10,8 @@
 #include "RotationMatrix4x4.h"
 #include "Shader.h"
 
-SandboxEngine::SandboxEngine() : m_camera(0.0, 0.0, 0.0), m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0)
+SandboxEngine::SandboxEngine() : m_camera(0.0, 0.0, 0.0), m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0),
+    m_rotateY(RotationMatrix4x4::Axis::Y, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0), m_yaw(0.0)
 {
     sAppName = "Harrys Example";
 }
@@ -45,26 +46,50 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     Vector3D userMoveY(0.0, -1.0, 0.0);
     Vector3D userMoveX(-1.0, 0.0, 0.0);
 
+    // Move camera up down left and right
     if (GetKey(olc::UP).bHeld)
     { 
-        m_camera += userMoveY * 8.0f * fElapsedTime;
+        m_camera += userMoveY * 8.0 * fElapsedTime;
     }
     if (GetKey(olc::DOWN).bHeld)
     {
-        m_camera -= userMoveY * 8.0f * fElapsedTime;
+        m_camera -= userMoveY * 8.0 * fElapsedTime;
     }
     if (GetKey(olc::LEFT).bHeld)
     {
-        m_camera += userMoveX * 8.0f * fElapsedTime;
+        m_camera += userMoveX * 8.0 * fElapsedTime;
     }
     if (GetKey(olc::RIGHT).bHeld)
     {
-        m_camera -= userMoveX * 8.0f * fElapsedTime;
+        m_camera -= userMoveX * 8.0 * fElapsedTime;
+    }
+
+    // FPS controls
+    Vector3D vForward = m_lookDirection * 8.0 * fElapsedTime;
+    if(GetKey(olc::A).bHeld)
+    {
+        m_yaw += 2.0 * fElapsedTime;
+    }
+    if (GetKey(olc::D).bHeld)
+    {
+        m_yaw -= 2.0 * fElapsedTime;
+    }
+    if (GetKey(olc::W).bHeld)
+    {
+        m_camera += vForward;
+    }
+    if (GetKey(olc::S).bHeld)
+    {
+        m_camera -= vForward;
     }
 
     //m_theta += 1.0 * static_cast<double>(fElapsedTime);
 
     m_rotateZ.Update(m_theta);
+
+    // Naughty... this should be given a better name to separate it from the random spinning...
+    m_rotateY.Update(m_yaw);
+
     m_rotateX.Update(m_theta);
 
     Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
@@ -78,7 +103,9 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     auto triangles = m_meshCube.GetTriangles();
 
     Vector3D vUp(0.0, -1.0, 0.0);
-    Vector3D vTarget = m_camera + m_lookDirection;
+    Vector3D vTarget(0.0, 0.0, 1.0);
+    m_lookDirection = vTarget * m_rotateY;
+    vTarget = m_camera + m_lookDirection;
 
     Matrix4x4 cameraView = CreateLookAtMatrix(m_camera, vTarget, vUp);
 

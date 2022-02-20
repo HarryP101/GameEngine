@@ -21,9 +21,11 @@ private:
 	Vector3D m_lookDirection;
 	Matrix4x4 m_projectionMatrix;
 	RotationMatrix4x4 m_rotateX;
+	RotationMatrix4x4 m_rotateY;
 	RotationMatrix4x4 m_rotateZ;
 
 	Matrix4x4 CreateLookAtMatrix(const Vector3D& pos, const Vector3D& target, const Vector3D& up) const;
 
 	double m_theta;
+	double m_yaw;
 };
