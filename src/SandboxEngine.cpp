@@ -10,7 +10,7 @@
 #include "RotationMatrix4x4.h"
 #include "Shader.h"
 
-SandboxEngine::SandboxEngine() : m_camera(0.0, 0.0, 0.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0)
+SandboxEngine::SandboxEngine() : m_camera(0.0, 0.0, 0.0), m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0)
 {
     sAppName = "Harrys Example";
 }
@@ -42,7 +42,27 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 {
     Clear(olc::BLACK);
 
-    m_theta += 1.0 * static_cast<double>(fElapsedTime);
+    Vector3D userMoveY(0.0, -1.0, 0.0);
+    Vector3D userMoveX(-1.0, 0.0, 0.0);
+
+    if (GetKey(olc::UP).bHeld)
+    { 
+        m_camera += userMoveY * 8.0f * fElapsedTime;
+    }
+    if (GetKey(olc::DOWN).bHeld)
+    {
+        m_camera -= userMoveY * 8.0f * fElapsedTime;
+    }
+    if (GetKey(olc::LEFT).bHeld)
+    {
+        m_camera += userMoveX * 8.0f * fElapsedTime;
+    }
+    if (GetKey(olc::RIGHT).bHeld)
+    {
+        m_camera -= userMoveX * 8.0f * fElapsedTime;
+    }
+
+    //m_theta += 1.0 * static_cast<double>(fElapsedTime);
 
     m_rotateZ.Update(m_theta);
     m_rotateX.Update(m_theta);
@@ -56,6 +76,11 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     // called once per frame
     auto triangles = m_meshCube.GetTriangles();
+
+    Vector3D vUp(0.0, -1.0, 0.0);
+    Vector3D vTarget = m_camera + m_lookDirection;
+
+    Matrix4x4 cameraView = CreateLookAtMatrix(m_camera, vTarget, vUp);
 
     std::vector<Triangle> trisToRaster;
     // Determine which triangles to draw
@@ -79,6 +104,9 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
             olc::Pixel s = Shader::GetColour(dp);
             tri.illum = s;
 
+            // Convert world space to view space
+            tri *= cameraView;
+
             // Project from 3D space to 2D
             tri *= m_projectionMatrix;
 
@@ -101,4 +129,32 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     }
 
     return true;
+}
+
+Matrix4x4 SandboxEngine::CreateLookAtMatrix(const Vector3D& pos, const Vector3D& target, const Vector3D& up) const
+{
+    Matrix4x4 lookAt;
+
+    // Calculate new forward direction
+    Vector3D newForward = target - pos;
+    newForward.Normalise();
+
+    // Calculate new up direction
+    Vector3D a = newForward * up.Dot(newForward);
+    Vector3D newUp = up - a;
+    newUp.Normalise();
+
+    Vector3D newRight = newUp.Cross(newForward);
+
+    lookAt.SetRow(0, newRight.GetX(), newUp.GetX(), newForward.GetX(), 0.0);
+    lookAt.SetRow(1, newRight.GetY(), newUp.GetY(), newForward.GetY(), 0.0);
+    lookAt.SetRow(2, newRight.GetZ(), newUp.GetZ(), newForward.GetZ(), 0.0);
+
+    double t1 = -(pos.GetX() * newRight.GetX() + pos.GetY() * newUp.GetX() + pos.GetZ() * newForward.GetX());
+    double t2 = -(pos.GetX() * newRight.GetY() + pos.GetY() * newUp.GetY() + pos.GetZ() * newForward.GetY());
+    double t3 = -(pos.GetX() * newRight.GetZ() + pos.GetY() * newUp.GetZ() + pos.GetZ() * newForward.GetZ());
+
+    lookAt.SetRow(3, t1, t2, t3, 1.0);
+
+    return lookAt;
 }

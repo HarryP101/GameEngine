@@ -21,10 +21,13 @@ public:
     void Normalise();
 
     Vector3D operator+(const Vector3D& rhs) const;
+    Vector3D& operator+=(const Vector3D& rhs);
 
     Vector3D operator-(const Vector3D& rhs) const;
+    Vector3D& operator-=(const Vector3D& rhs);
 
     Vector3D operator*(const Matrix4x4& rhs) const;
+    Vector3D operator*(double scaling) const;
 
     Vector3D Cross(const Vector3D& rhs) const;
 

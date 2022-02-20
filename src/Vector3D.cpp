@@ -35,9 +35,25 @@ Vector3D Vector3D::operator+(const Vector3D& rhs) const
     return Vector3D(m_x + rhs.m_x, m_y + rhs.m_y, m_z + rhs.m_z);
 }
 
+Vector3D& Vector3D::operator+=(const Vector3D& rhs)
+{
+    m_x += rhs.GetX();
+    m_y += rhs.GetY();
+    m_z += rhs.GetZ();
+    return *this;
+}
+
 Vector3D Vector3D::operator-(const Vector3D& rhs) const
 {
     return Vector3D(m_x - rhs.m_x, m_y - rhs.m_y, m_z - rhs.m_z);
+}
+
+Vector3D& Vector3D::operator-=(const Vector3D& rhs)
+{
+    m_x -= rhs.GetX();
+    m_y -= rhs.GetY();
+    m_z -= rhs.GetZ();
+    return *this;
 }
 
 // This shouldnt be a member function, as it does something unexpected
@@ -57,6 +73,11 @@ Vector3D Vector3D::operator*(const Matrix4x4& rhs) const
         z /= w;
     }
     return Vector3D(x, y, z);
+}
+
+Vector3D Vector3D::operator*(double scaling) const
+{
+    return Vector3D(m_x * scaling, m_y * scaling, m_z * scaling);
 }
 
 Vector3D Vector3D::Cross(const Vector3D& rhs) const
