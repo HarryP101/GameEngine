@@ -16,6 +16,7 @@ RotationMatrix4x4::RotationMatrix4x4(Axis axis, double initialTheta) : m_axis(ax
             SetRow(1, 0.0, 1.0, 0.0, 0.0);
             SetRow(2, -sin(initialTheta), 0.0, cos(initialTheta), 0.0);
             SetRow(3, 0.0, 0.0, 0.0, 1.0);
+            break;
         case Axis::Z:
             SetRow(0, cos(initialTheta), sin(initialTheta), 0.0, 0.0);
             SetRow(1, -sin(initialTheta), cos(initialTheta), 0.0, 0.0);

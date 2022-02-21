@@ -2,6 +2,8 @@
 
 #include "SandboxEngine.h"
 #include <algorithm>
+#include <vector>
+#include <list>
 
 #include "Mesh.h"
 #include "Triangle.h"
@@ -58,11 +60,13 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     }
     if (GetKey(olc::LEFT).bHeld)
     {
-        m_camera += userMoveX * 8.0 * fElapsedTime;
+        auto temp = userMoveX * m_rotateY; 
+        m_camera += temp * 8.0 * fElapsedTime;
     }
     if (GetKey(olc::RIGHT).bHeld)
     {
-        m_camera -= userMoveX * 8.0 * fElapsedTime;
+        auto temp = userMoveX * m_rotateY;
+        m_camera -= temp * 8.0 * fElapsedTime;
     }
 
     // FPS controls
@@ -84,14 +88,14 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
         m_camera -= vForward;
     }
 
-    //m_theta += 1.0 * static_cast<double>(fElapsedTime);
+    m_theta += 1.0 * static_cast<double>(fElapsedTime);
 
-    m_rotateZ.Update(m_theta);
+    //m_rotateZ.Update(m_theta);
 
     // Naughty... this should be given a better name to separate it from the random spinning...
     m_rotateY.Update(m_yaw);
 
-    m_rotateX.Update(m_theta);
+    //m_rotateX.Update(m_theta);
 
     Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
     Vector3D translation(0.0, 0.0, 8.0);
@@ -127,7 +131,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
         if ((normal.Dot(tri.vert1 - m_camera)) < 0.0)
         {
             // Illumination
-            double dp = normal.Dot(lightDirection);
+            double dp = normal.Dot(m_lookDirection.Scale(Vector3D(-1.0, -1.0, -1.0)));
 
             olc::Pixel s = Shader::GetColour(dp);
             tri.illum = s;
@@ -158,7 +162,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     
     Clear(olc::BLACK);
 
-    for (const auto& tri : trisToRaster)
+    for (const auto& triRaster : trisToRaster)
     {
         // Clip triangles against all four screen edges. Create a queue (list??) to traverse
         // all new triangles so we only test new triangles generated against plane
@@ -167,7 +171,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
         std::list<Triangle> listTriangles;
 
         // Add initial triangle
-        listTriangles.push_back(tri);
+        listTriangles.push_back(triRaster);
         size_t nNewTriangles = 1;
 
         for (unsigned int p = 0; p < 4; ++p)

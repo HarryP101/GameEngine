@@ -586,7 +586,7 @@ namespace olc
 		static constexpr int32_t LEFT = 0;
 		static constexpr int32_t RIGHT = 1;
 		static constexpr int32_t MIDDLE = 2;
-	};
+	}
 
 	// O------------------------------------------------------------------------------O
 	// | olc::HWButton - Represents the state of a hardware button (mouse/key/joy)    |
@@ -1672,14 +1672,14 @@ namespace olc
 		size_t c = 0;
 		for (auto s : data)	o.push_back(s ^ key[(c++) % key.size()]);
 		return o;
-	};
+	}
 
 	std::string ResourcePack::makeposix(const std::string& path)
 	{
 		std::string o;
 		for (auto s : path) o += std::string(1, s == '\\' ? '/' : s);
 		return o;
-	};
+	}
 
 	// O------------------------------------------------------------------------------O
 	// | olc::PixelGameEngine IMPLEMENTATION                                          |
@@ -2055,10 +2055,10 @@ namespace olc
 			int y0 = radius;
 			int d = 3 - 2 * radius;
 
-			auto drawline = [&](int sx, int ex, int y)
+			auto drawline = [&](int sx, int ex, int y1)
 			{
-				for (int x = sx; x <= ex; x++)
-					Draw(x, y, p);
+				for (int x1 = sx; x <= ex; x++)
+					Draw(x1, y1, p);
 			};
 
 			while (y0 >= x0)
@@ -2546,6 +2546,7 @@ namespace olc
 
 	void PixelGameEngine::DrawPolygonDecal(olc::Decal* decal, const std::vector<olc::vf2d>& pos, const std::vector<float>& depth, const std::vector<olc::vf2d>& uv, const olc::Pixel tint)
 	{
+		(void)depth;
 		DecalInstance di;
 		di.decal = decal;
 		di.points = uint32_t(pos.size());
@@ -3315,8 +3316,8 @@ namespace olc
 	PGEX::PGEX(bool bHook) { if(bHook) pge->pgex_Register(this); }
 	void PGEX::OnBeforeUserCreate() {}
 	void PGEX::OnAfterUserCreate()	{}
-	bool PGEX::OnBeforeUserUpdate(float& fElapsedTime) { return false; }
-	void PGEX::OnAfterUserUpdate(float fElapsedTime) {}
+	bool PGEX::OnBeforeUserUpdate(float& fElapsedTime) { (void)fElapsedTime; return false; }
+	void PGEX::OnAfterUserUpdate(float fElapsedTime) { (void)fElapsedTime; }
 
 	// Need a couple of statics as these are singleton instances
 	// read from multiple locations
@@ -3325,7 +3326,7 @@ namespace olc
 	olc::PixelGameEngine* olc::Platform::ptrPGE = nullptr;
 	olc::PixelGameEngine* olc::Renderer::ptrPGE = nullptr;
 	std::unique_ptr<ImageLoader> olc::Sprite::loader = nullptr;
-};
+}
 #pragma endregion 
 
 // O------------------------------------------------------------------------------O
@@ -3415,6 +3416,7 @@ namespace olc
 
 		olc::rcode CreateDevice(std::vector<void*> params, bool bFullScreen, bool bVSYNC) override
 		{
+			(void)bFullScreen;
 #if defined(OLC_PLATFORM_WINAPI)
 			// Create Device Context
 			glDeviceContext = GetDC((HWND)(params[0]));
@@ -3698,6 +3700,7 @@ namespace olc
 
 		void ReadTexture(uint32_t id, olc::Sprite* spr) override
 		{
+			(void)id;
 			glReadPixels(0, 0, spr->width, spr->height, GL_RGBA, GL_UNSIGNED_BYTE, spr->GetData());
 		}
 
@@ -4395,6 +4398,8 @@ namespace olc
 		{
 			UNUSED(pack);
 
+			(void)sImageFile;
+
 			// clear out existing sprite
 			spr->pColData.clear();
 
@@ -4485,6 +4490,8 @@ namespace olc
 
 		olc::rcode SaveImageResource(olc::Sprite* spr, const std::string& sImageFile) override
 		{
+			(void)spr;
+			(void)sImageFile;
 			return olc::rcode::OK;
 		}
 	};

@@ -11,8 +11,7 @@ LDFLAGS := -lX11 -lGL -lpthread -lpng -lstdc++fs
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= $(INC_FLAGS) -Wall -g -std=c++17 -Wno-unknown-pragmas -Wconversion -Wno-psabi
-
+CPPFLAGS ?= $(INC_FLAGS) -Wall -Wno-unknown-pragmas -Wno-psabi -Wextra -Wshadow -g -std=c++17 
 CC = g++
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)

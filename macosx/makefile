@@ -6,12 +6,12 @@ SRC_DIRS ?= ./src
 SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
-LDFLAGS := -L/usr/local/octave/3.8.0/lib -framework OpenGL -framework GLUT -framework Carbon -lpng
+LDFLAGS := -L/usr/local/lib -framework OpenGL -framework GLUT -framework Carbon -lpng
 
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CPPFLAGS ?= -I/usr/local/octave/3.8.0/include $(INC_FLAGS) -Wall -g -arch x86_64 -mmacosx-version-min=10.15 -std=c++17 -Wconversion
+CPPFLAGS ?= -I/usr/local/include $(INC_FLAGS) -Wall -g -arch x86_64 -mmacosx-version-min=10.15 -std=c++17
 
 CC = clang++
 
