@@ -94,6 +94,18 @@ double Vector3D::Dot(const Vector3D& rhs) const
     return m_x * rhs.m_x + m_y * rhs.m_y + m_z * rhs.m_z;
 }
 
+Vector3D Vector3D::IntersectPlane(const Vector3D& planePoint, Vector3D planeNormal, const Vector3D& lineStart, const Vector3D& lineEnd)
+{
+    planeNormal.Normalise();
+    double planeD = -(planeNormal.Dot(planePoint));
+    double ad = lineStart.Dot(planeNormal);
+    double bd = lineEnd.Dot(planeNormal);
+    double t = (-planeD - ad) / (bd - ad);
+    Vector3D lineStartToEnd = lineEnd - lineStart;
+    Vector3D lineToIntersect = lineStartToEnd * t;
+    return lineStart + lineToIntersect;
+}
+
 double Vector3D::GetX() const { return m_x; }
 double Vector3D::GetY() const { return m_y; }
 double Vector3D::GetZ() const { return m_z; }

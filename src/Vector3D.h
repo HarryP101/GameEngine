@@ -33,6 +33,8 @@ public:
 
     double Dot(const Vector3D& rhs) const;
 
+    static Vector3D IntersectPlane(const Vector3D& planePoint, Vector3D planeNormal, const Vector3D& lineStart, const Vector3D& lineEnd);
+
 private:
     double m_x;
     double m_y;

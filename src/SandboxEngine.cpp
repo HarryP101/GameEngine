@@ -41,10 +41,11 @@ bool SandboxEngine::OnUserCreate()
 
 bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 {
-    Clear(olc::BLACK);
+    const Vector3D userMoveY(0.0, -1.0, 0.0);
+    const Vector3D userMoveX(-1.0, 0.0, 0.0);
 
-    Vector3D userMoveY(0.0, -1.0, 0.0);
-    Vector3D userMoveX(-1.0, 0.0, 0.0);
+    const Vector3D zNearPlane(0.0, 0.0, 0.1);
+    const Vector3D zNormal(0.0, 0.0, 1.0);
 
     // Move camera up down left and right
     if (GetKey(olc::UP).bHeld)
@@ -134,25 +135,91 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
             // Convert world space to view space
             tri *= cameraView;
 
-            // Project from 3D space to 2D
-            tri *= m_projectionMatrix;
+            // Clip viewed triangle against near plane. This could form up to two additional triangles
+            std::vector<Triangle> clippedTris(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
 
-            // Scale into view
-            tri += one;
-            tri *= xyzScaling;
+            unsigned int nClippedTriangles = ClipAgainstPlane(zNearPlane, zNormal, tri, clippedTris[0], clippedTris[1]);
 
-            trisToRaster.push_back(tri);
+            for (unsigned int n = 0; n < nClippedTriangles; ++n)
+            {
+                // Project from 3D space to 2D
+                clippedTris[n] *= m_projectionMatrix;
+
+                // Scale into view
+                clippedTris[n] += one;
+                clippedTris[n] *= xyzScaling;
+
+                trisToRaster.push_back(clippedTris[n]);
+            }
         }
     }
 
     std::sort(trisToRaster.begin(), trisToRaster.end(), [](Triangle &t1, Triangle &t2){ return t1.GetCentroid().GetZ() > t2.GetCentroid().GetZ(); });
     
+    Clear(olc::BLACK);
+
     for (const auto& tri : trisToRaster)
     {
-        // Rasterize triangles
-        FillTriangle(tri.vert1.GetPixelX(), tri.vert1.GetPixelY(),
-            tri.vert2.GetPixelX(), tri.vert2.GetPixelY(),
-            tri.vert3.GetPixelX(), tri.vert3.GetPixelY(), tri.illum);
+        // Clip triangles against all four screen edges. Create a queue (list??) to traverse
+        // all new triangles so we only test new triangles generated against plane
+
+        std::vector<Triangle> clipped(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
+        std::list<Triangle> listTriangles;
+
+        // Add initial triangle
+        listTriangles.push_back(tri);
+        size_t nNewTriangles = 1;
+
+        for (unsigned int p = 0; p < 4; ++p)
+        {
+            size_t nTrisToAdd = 0;
+            while (nNewTriangles > 0)
+            {
+                // Take triangle from front of queue
+                Triangle test = listTriangles.front();
+                listTriangles.pop_front();
+                nNewTriangles--;
+
+                // Clip against plane. Only need to test each subsequent plane, against
+                // subsequent new triangles as all triangles after plane clip are guaranteed to
+                // lie on the inside of the plane
+                switch(p)
+                {
+                    case 0:
+                        nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), test, clipped[0], clipped[1]);
+                        break;
+                    case 1:
+                        nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, static_cast<double>(ScreenHeight()) - 1.0, 0.0), Vector3D(0.0, -1.0, 0.0),
+                            test, clipped[0], clipped[1]);
+                        break;
+                    case 2:
+                        nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), test, clipped[0], clipped[1]);
+                        break;
+                    case 3:
+                        nTrisToAdd = ClipAgainstPlane(Vector3D(static_cast<double>(ScreenWidth()) - 1.0, 0.0, 0.0), Vector3D(-1.0, 0.0, 0.0),
+                            test, clipped[0], clipped[1]);
+                        break;
+                    default:
+                        break;
+                }
+
+                // Add new triangles generated to queue
+                for (size_t w = 0; w < nTrisToAdd; ++w)
+                {
+                    listTriangles.push_back(clipped[w]);
+                }
+            }
+            nNewTriangles = listTriangles.size();
+        }
+
+        for (const auto& tri : listTriangles)
+        {
+            // Rasterize triangles
+            FillTriangle(tri.vert1.GetPixelX(), tri.vert1.GetPixelY(),
+                tri.vert2.GetPixelX(), tri.vert2.GetPixelY(),
+                tri.vert3.GetPixelX(), tri.vert3.GetPixelY(), tri.illum);
+        }
+
     }
 
     return true;
@@ -184,4 +251,113 @@ Matrix4x4 SandboxEngine::CreateLookAtMatrix(const Vector3D& pos, const Vector3D&
     lookAt.SetRow(3, t1, t2, t3, 1.0);
 
     return lookAt;
+}
+
+unsigned int SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle,
+    Triangle &outTri1, Triangle &outTri2) const
+{
+    // Ensure it has been normalised
+    planeNormal.Normalise();
+
+    // Return shortest distance from point to plane
+    auto shortestDist = [planePoint, planeNormal](Vector3D p)
+    {
+        p.Normalise();
+        return (planeNormal.GetX() * p.GetX() + planeNormal.GetY() * p.GetY() + planeNormal.GetZ() * p.GetZ() - planeNormal.Dot(planePoint));
+    };
+
+    // Storage to classify points either side of the plane
+    std::vector<Vector3D> insidePoints(3, Vector3D(0.0, 0.0, 0.0));
+    std::vector<Vector3D> outsidePoints(3, Vector3D(0.0, 0.0, 0.0));
+    size_t nInsidePointCount = 0;
+    size_t nOutsidePointCount = 0;
+
+    // Get distance of each point in triangle to plane
+    double d0 = shortestDist(inputTriangle.vert1);
+    double d1 = shortestDist(inputTriangle.vert2);
+    double d2 = shortestDist(inputTriangle.vert3);
+
+    if (d0 >= 0)
+    {
+        insidePoints[nInsidePointCount++] = inputTriangle.vert1;
+    }
+    else
+    {
+        outsidePoints[nOutsidePointCount++] = inputTriangle.vert1;
+    }
+    if (d1 >= 0)
+    {
+        insidePoints[nInsidePointCount++] = inputTriangle.vert2;
+    }
+    else
+    {
+        outsidePoints[nOutsidePointCount++] = inputTriangle.vert2;
+    }
+    if (d2 >= 0)
+    {
+        insidePoints[nInsidePointCount++] = inputTriangle.vert3;
+    }
+    else
+    {
+        outsidePoints[nOutsidePointCount++] = inputTriangle.vert3;
+    }
+
+    // Classify the triangle points and break the input triangle into smaller
+    // output triangles if required.
+
+    if (nInsidePointCount == 0)
+    {
+        // All points lie on the outside of the plane. Clip the whole triangle
+        return 0U;
+    }
+    else if (nInsidePointCount == 3)
+    {
+        // All points lie on the inside of the plane. Do nothing
+        outTri1 = inputTriangle;
+
+        return 1U;
+    }
+    else if (nInsidePointCount == 1 && nOutsidePointCount == 2)
+    {
+        // Triangle should be clipped. Triangle becomes a smaller triangle
+
+        outTri1.illum = inputTriangle.illum;
+
+        // Outside point is valid
+        outTri1.vert1 = inputTriangle.vert1;
+
+        // Two new points are at the locations where the original sides of the triangle intersect
+        // with the plane
+        outTri1.vert2 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0]);
+        outTri1.vert3 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[1]);
+
+        return 1U;
+    }
+    else if (nInsidePointCount == 2 && nOutsidePointCount == 1)
+    {
+        // Triangle should be clipped. Triangle becomes a quad, represented
+        // with two new triangles.
+
+        outTri1.illum = inputTriangle.illum;
+        outTri2.illum = inputTriangle.illum;
+
+        // First triangle consists of two inside points and new point determined
+        // by where one side of the triangle intersects the plane
+        outTri1.vert1 = insidePoints[0];
+        outTri1.vert2 = insidePoints[1];
+        outTri1.vert3 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0]);
+
+        // Second triangle is composed of one of the inside points, a new point
+        // from the intersection of the other side of the triangle and the plane
+        // and the newly created point above
+        outTri2.vert1 = insidePoints[1];
+        outTri2.vert2 = outTri1.vert2;
+        outTri2.vert3 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[1], outsidePoints[0]);
+
+        return 2U;
+    }
+    else
+    {
+        throw std::runtime_error("Something has gone horribly wrong");
+    }
 }

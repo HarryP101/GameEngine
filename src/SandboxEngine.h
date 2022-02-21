@@ -23,9 +23,9 @@ private:
 	RotationMatrix4x4 m_rotateX;
 	RotationMatrix4x4 m_rotateY;
 	RotationMatrix4x4 m_rotateZ;
-
-	Matrix4x4 CreateLookAtMatrix(const Vector3D& pos, const Vector3D& target, const Vector3D& up) const;
-
 	double m_theta;
 	double m_yaw;
+
+	Matrix4x4 CreateLookAtMatrix(const Vector3D& pos, const Vector3D& target, const Vector3D& up) const;
+	unsigned int ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle, Triangle &outTri1, Triangle &outTri2) const;
 };
