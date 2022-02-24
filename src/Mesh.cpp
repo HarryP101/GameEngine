@@ -1,12 +1,15 @@
 #include "Mesh.h"
-#include <iostream>
+#include <string>
+#include <vector>
 #include "ObjFileLoader.h"
 #include "Triangle.h"
 
-Mesh::Mesh() : m_triangles() {}
+Mesh::Mesh() : m_originalTriangles(), m_transformedTriangles() {}
 
-Mesh::Mesh(const std::vector<Triangle>& triangles) : m_triangles(triangles) {}
+Mesh::Mesh(const std::vector<Triangle>& triangles) : m_originalTriangles(triangles), m_transformedTriangles(triangles) {}
 
+Mesh::Mesh(const std::string& objFileLocation) : m_originalTriangles(ObjFileLoader::Load(objFileLocation)), m_transformedTriangles(m_originalTriangles) {}
+/*
 Mesh Mesh::CreateCube()
 {
     typedef Vector3D Point;
@@ -69,3 +72,4 @@ Mesh Mesh::CreateCoolShip(const std::string& location)
 
     return mesh;
 }
+*/

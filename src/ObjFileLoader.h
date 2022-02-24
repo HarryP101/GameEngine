@@ -1,11 +1,12 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-#include "Mesh.h"
+#include "Triangle.h"
 
 class ObjFileLoader
 {
 public:
-    static Mesh Load(const std::string& fileName);
+    static std::vector<Triangle> Load(const std::string& fileName);
 };

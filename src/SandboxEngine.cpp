@@ -5,15 +5,14 @@
 #include <vector>
 #include <list>
 
-#include "Mesh.h"
 #include "Triangle.h"
 #include "Vector3D.h"
 #include "Constants.h"
 #include "RotationMatrix4x4.h"
-#include "Shader.h"
 
 SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0),
-    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 0.0, 0.0)), m_theta(0.0), m_spin(0.0)
+    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 0.0, 0.0)),
+    m_planet(Vector3D(5.0, 5.0, 8.0), 0.5, "sampleobjects/sphere.obj"), m_theta(0.0), m_spin(0.0)
 {
     sAppName = "Harrys Example";
 }
@@ -21,9 +20,6 @@ SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_rotateX(Rotat
 bool SandboxEngine::OnUserCreate()
 {
     // Called once at the start, so create things here
-
-    // Set up unit cube
-    m_meshCube = Mesh::CreateCoolShip("sampleobjects/sphere.obj");
 
     // Set up projection matrix
     constexpr double zNear = 0.1;
@@ -86,31 +82,28 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     //m_rotateX.Update(m_theta);
 
-    // These define the objects location, orientation and size in space
-    Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
-    Vector3D translation(5.0 * sin(m_theta), 5.0 * cos(m_theta), 8.0);
+    //Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
     Vector3D one(1.0, 1.0, 0.0);
-    Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
 
-    // called once per frame
-    auto triangles = m_meshCube.GetTriangles();
-
+    // Update camera position and target. Gen new matrix
     m_camera.UpdateTarget(0.0, 0.0, 0.0);
-
     Matrix4x4 cameraView = m_camera.CreateLookAtMatrix();
 
+    // Update planet position and size
+    m_planet.UpdatePosAndOrient(5.0 * sin(m_theta), 5.0 * cos(m_theta), 8.0, m_spin);
+    Vector3D xyzScaling(m_planet.GetSize() * static_cast<double>(ScreenWidth()), m_planet.GetSize() * static_cast<double>(ScreenHeight()), 1.0);
+
+    // Called once per frame
+    auto triangles = m_planet.GetTriangles();
     std::vector<Triangle> trisToRaster;
     // Determine which triangles to draw
     for (auto& tri : triangles)
     {
-        tri *= worldMatrix;
-        tri += translation;
-
         // Can choose any vertice here as the triangle exists in a plane
         if (tri.CanBeSeen(m_camera.GetPosition()))
         {
             // Illumination
-            tri.illum = m_sun.GetIllumination(translation, tri.normal);
+            tri.illum = m_sun.GetIllumination(tri.vert1, tri.normal);
 
             // Convert world space to view space
             tri *= cameraView;

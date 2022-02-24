@@ -8,7 +8,7 @@
 #include "Vector3D.h"
 #include "Triangle.h"
 
-Mesh ObjFileLoader::Load(const std::string& filename)
+std::vector<Triangle> ObjFileLoader::Load(const std::string& filename)
 {
     std::ifstream f(filename);
     if (!f.is_open())
@@ -53,6 +53,6 @@ Mesh ObjFileLoader::Load(const std::string& filename)
                 triangles.push_back(Triangle(vertices[i1 - 1], vertices[i2 - 1], vertices[i3 - 1]));
             }
         }
-        return Mesh(triangles);
+        return triangles;
     }
 }

@@ -12,6 +12,11 @@ Triangle::Triangle(const Vector3D& v1, const Vector3D& v2, const Vector3D& v3) :
     normal.Normalise();
 }
 
+Triangle Triangle::operator+(const Vector3D& rhs) const
+{
+    return Triangle(vert1 + rhs, vert2 + rhs, vert3 + rhs);
+}
+
 Triangle& Triangle::operator+=(const Vector3D& rhs)
 {
     vert1 = vert1 + rhs;
