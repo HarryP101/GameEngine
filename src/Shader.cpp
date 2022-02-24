@@ -1,5 +1,4 @@
 #include "Shader.h"
-#include <iostream>
 
 olc::Pixel Shader::GetColour(double lum)
 {

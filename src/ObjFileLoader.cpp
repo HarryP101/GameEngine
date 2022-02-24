@@ -43,8 +43,12 @@ Mesh ObjFileLoader::Load(const std::string& filename)
 
             if (line[0] == 'f')
             {
-                size_t i1, i2, i3;
-                lineStream >> junk >> i1 >> i2 >> i3;
+                std::string s1, s2, s3;
+                lineStream >> junk >> s1 >> s2 >> s3;
+
+                size_t i1 = std::stoul(s1.substr(0, s1.find('/')));
+                size_t i2 = std::stoul(s2.substr(0, s2.find('/')));
+                size_t i3 = std::stoul(s3.substr(0, s3.find('/')));
 
                 triangles.push_back(Triangle(vertices[i1 - 1], vertices[i2 - 1], vertices[i3 - 1]));
             }

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "Matrix4x4.h"
+#include "ProjectionMatrix.h"
 
 class Vector3D
 {
@@ -27,6 +28,7 @@ public:
     Vector3D& operator-=(const Vector3D& rhs);
 
     Vector3D operator*(const Matrix4x4& rhs) const;
+    Vector3D operator*(const ProjectionMatrix& rhs) const;
     Vector3D operator*(double scaling) const;
 
     Vector3D Cross(const Vector3D& rhs) const;

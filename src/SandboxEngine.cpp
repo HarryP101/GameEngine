@@ -12,8 +12,8 @@
 #include "RotationMatrix4x4.h"
 #include "Shader.h"
 
-SandboxEngine::SandboxEngine() : m_camera(0.0, 0.0, 0.0), m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0),
-    m_rotateY(RotationMatrix4x4::Axis::Y, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0), m_theta(0.0), m_yaw(0.0)
+SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0),
+    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 0.0, 0.0)), m_theta(0.0), m_spin(0.0)
 {
     sAppName = "Harrys Example";
 }
@@ -23,7 +23,7 @@ bool SandboxEngine::OnUserCreate()
     // Called once at the start, so create things here
 
     // Set up unit cube
-    m_meshCube = Mesh::CreateCoolShip("sampleobjects/teapot.obj");
+    m_meshCube = Mesh::CreateCoolShip("sampleobjects/sphere.obj");
 
     // Set up projection matrix
     constexpr double zNear = 0.1;
@@ -32,87 +32,72 @@ bool SandboxEngine::OnUserCreate()
     double aspectRatio = static_cast<double>(ScreenHeight()) / static_cast<double>(ScreenWidth());
     double fovRad = 1.0 / tan(((fov * 0.5) / 180.0) * Constants::PI);
 
-    m_projectionMatrix.SetRow(0, aspectRatio * fovRad, 0.0, 0.0, 0.0);
-
-    m_projectionMatrix.SetRow(1, 0.0, fovRad, 0.0, 0.0);
-    m_projectionMatrix.SetRow(2, 0.0, 0.0, zFar / (zFar - zNear), 1.0);
-    m_projectionMatrix.SetRow(3, 0.0, 0.0, -(zFar * zNear) / (zFar - zNear), 0.0);
+    m_projectionMatrix = ProjectionMatrix(aspectRatio, fovRad, zNear, zFar);
 
     return true;
 }
 
 bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 {
-    const Vector3D userMoveY(0.0, -1.0, 0.0);
-    const Vector3D userMoveX(-1.0, 0.0, 0.0);
-
     const Vector3D zNearPlane(0.0, 0.0, 0.1);
     const Vector3D zNormal(0.0, 0.0, 1.0);
 
     // Move camera up down left and right
     if (GetKey(olc::UP).bHeld)
     { 
-        m_camera += userMoveY * 8.0 * fElapsedTime;
+        m_camera.UpdatePosition(0.0, -8.0 * fElapsedTime, 0.0);
     }
     if (GetKey(olc::DOWN).bHeld)
     {
-        m_camera -= userMoveY * 8.0 * fElapsedTime;
+        m_camera.UpdatePosition(0.0, 8.0 * fElapsedTime, 0.0);
     }
     if (GetKey(olc::LEFT).bHeld)
     {
-        auto temp = userMoveX * m_rotateY; 
-        m_camera += temp * 8.0 * fElapsedTime;
+        m_camera.UpdatePosition(-8.0 * fElapsedTime, 0.0, 0.0);
     }
     if (GetKey(olc::RIGHT).bHeld)
     {
-        auto temp = userMoveX * m_rotateY;
-        m_camera -= temp * 8.0 * fElapsedTime;
+        m_camera.UpdatePosition(8.0 * fElapsedTime, 0.0, 0.0);
     }
 
     // FPS controls
-    Vector3D vForward = m_lookDirection * 8.0 * fElapsedTime;
     if(GetKey(olc::A).bHeld)
     {
-        m_yaw += 2.0 * fElapsedTime;
+        m_spin += 2.0 * fElapsedTime;
     }
     if (GetKey(olc::D).bHeld)
     {
-        m_yaw -= 2.0 * fElapsedTime;
+        m_spin -= 2.0 * fElapsedTime;
     }
     if (GetKey(olc::W).bHeld)
     {
-        m_camera += vForward;
+        m_camera.UpdatePosition(0.0, 0.0, 8.0 * fElapsedTime);
     }
     if (GetKey(olc::S).bHeld)
     {
-        m_camera -= vForward;
+        m_camera.UpdatePosition(0.0, 0.0, -8.0 * fElapsedTime);
     }
 
-    m_theta += 1.0 * static_cast<double>(fElapsedTime);
+    m_theta += 0.5 * static_cast<double>(fElapsedTime);
 
     //m_rotateZ.Update(m_theta);
 
-    // Naughty... this should be given a better name to separate it from the random spinning...
-    m_rotateY.Update(m_yaw);
+    m_spinMat.Update(m_spin);
 
     //m_rotateX.Update(m_theta);
 
+    // These define the objects location, orientation and size in space
     Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
-    Vector3D translation(0.0, 0.0, 8.0);
+    Vector3D translation(5.0 * sin(m_theta), 5.0 * cos(m_theta), 8.0);
     Vector3D one(1.0, 1.0, 0.0);
     Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
-    Vector3D lightDirection(0.0, 0.0, -1.0);
-    lightDirection.Normalise();
 
     // called once per frame
     auto triangles = m_meshCube.GetTriangles();
 
-    Vector3D vUp(0.0, -1.0, 0.0);
-    Vector3D vTarget(0.0, 0.0, 1.0);
-    m_lookDirection = vTarget * m_rotateY;
-    vTarget = m_camera + m_lookDirection;
+    m_camera.UpdateTarget(0.0, 0.0, 0.0);
 
-    Matrix4x4 cameraView = CreateLookAtMatrix(m_camera, vTarget, vUp);
+    Matrix4x4 cameraView = m_camera.CreateLookAtMatrix();
 
     std::vector<Triangle> trisToRaster;
     // Determine which triangles to draw
@@ -121,20 +106,11 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
         tri *= worldMatrix;
         tri += translation;
 
-        Vector3D line1 = tri.vert2 - tri.vert1;
-        Vector3D line2 = tri.vert3 - tri.vert1;
-
-        Vector3D normal = line1.Cross(line2);
-        normal.Normalise();
-
         // Can choose any vertice here as the triangle exists in a plane
-        if ((normal.Dot(tri.vert1 - m_camera)) < 0.0)
+        if (tri.CanBeSeen(m_camera.GetPosition()))
         {
             // Illumination
-            double dp = normal.Dot(m_lookDirection.Scale(Vector3D(-1.0, -1.0, -1.0)));
-
-            olc::Pixel s = Shader::GetColour(dp);
-            tri.illum = s;
+            tri.illum = m_sun.GetIllumination(translation, tri.normal);
 
             // Convert world space to view space
             tri *= cameraView;
@@ -227,34 +203,6 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     }
 
     return true;
-}
-
-Matrix4x4 SandboxEngine::CreateLookAtMatrix(const Vector3D& pos, const Vector3D& target, const Vector3D& up) const
-{
-    Matrix4x4 lookAt;
-
-    // Calculate new forward direction
-    Vector3D newForward = target - pos;
-    newForward.Normalise();
-
-    // Calculate new up direction
-    Vector3D a = newForward * up.Dot(newForward);
-    Vector3D newUp = up - a;
-    newUp.Normalise();
-
-    Vector3D newRight = newUp.Cross(newForward);
-
-    lookAt.SetRow(0, newRight.GetX(), newUp.GetX(), newForward.GetX(), 0.0);
-    lookAt.SetRow(1, newRight.GetY(), newUp.GetY(), newForward.GetY(), 0.0);
-    lookAt.SetRow(2, newRight.GetZ(), newUp.GetZ(), newForward.GetZ(), 0.0);
-
-    double t1 = -(pos.GetX() * newRight.GetX() + pos.GetY() * newUp.GetX() + pos.GetZ() * newForward.GetX());
-    double t2 = -(pos.GetX() * newRight.GetY() + pos.GetY() * newUp.GetY() + pos.GetZ() * newForward.GetY());
-    double t3 = -(pos.GetX() * newRight.GetZ() + pos.GetY() * newUp.GetZ() + pos.GetZ() * newForward.GetZ());
-
-    lookAt.SetRow(3, t1, t2, t3, 1.0);
-
-    return lookAt;
 }
 
 unsigned int SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle,

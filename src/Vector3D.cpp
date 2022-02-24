@@ -75,6 +75,22 @@ Vector3D Vector3D::operator*(const Matrix4x4& rhs) const
     return Vector3D(x, y, z);
 }
 
+Vector3D Vector3D::operator*(const ProjectionMatrix& rhs) const
+{
+    double x = m_x * rhs.GetValue(0, 0);
+    double y = m_y * rhs.GetValue(1, 1);
+    double z = m_z * rhs.GetValue(2, 2) + rhs.GetValue(3, 2);
+    double w = m_z * rhs.GetValue(2, 3);
+
+    if (w != 0.0)
+    {
+        x /= w;
+        y /= w;
+        z /= w;
+    }
+    return Vector3D(x, y, z);
+}
+
 Vector3D Vector3D::operator*(double scaling) const
 {
     return Vector3D(m_x * scaling, m_y * scaling, m_z * scaling);
