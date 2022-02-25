@@ -32,3 +32,6 @@
 
 # Output directories
 build
+
+# Vs code stuff
+src/.vscode

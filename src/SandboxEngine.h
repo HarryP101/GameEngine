@@ -32,5 +32,6 @@ private:
 	double m_theta;
 	double m_spin;
 
-	unsigned int ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle, Triangle &outTri1, Triangle &outTri2) const;
+	size_t ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle, Triangle &outTri1, Triangle &outTri2) const;
+	void UpdateCameraFromInput(float fElapsedTime);
 };

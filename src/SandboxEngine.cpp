@@ -11,7 +11,7 @@
 #include "RotationMatrix4x4.h"
 
 SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0),
-    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 0.0, 0.0)),
+    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 3.0, -5.0)),
     m_planet(Vector3D(5.0, 5.0, 8.0), 0.5, "sampleobjects/sphere.obj"), m_theta(0.0), m_spin(0.0)
 {
     sAppName = "Harrys Example";
@@ -38,49 +38,13 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     const Vector3D zNearPlane(0.0, 0.0, 0.1);
     const Vector3D zNormal(0.0, 0.0, 1.0);
 
-    // Move camera up down left and right
-    if (GetKey(olc::UP).bHeld)
-    { 
-        m_camera.UpdatePosition(0.0, -8.0 * fElapsedTime, 0.0);
-    }
-    if (GetKey(olc::DOWN).bHeld)
-    {
-        m_camera.UpdatePosition(0.0, 8.0 * fElapsedTime, 0.0);
-    }
-    if (GetKey(olc::LEFT).bHeld)
-    {
-        m_camera.UpdatePosition(-8.0 * fElapsedTime, 0.0, 0.0);
-    }
-    if (GetKey(olc::RIGHT).bHeld)
-    {
-        m_camera.UpdatePosition(8.0 * fElapsedTime, 0.0, 0.0);
-    }
-
-    // FPS controls
-    if(GetKey(olc::A).bHeld)
-    {
-        m_spin += 2.0 * fElapsedTime;
-    }
-    if (GetKey(olc::D).bHeld)
-    {
-        m_spin -= 2.0 * fElapsedTime;
-    }
-    if (GetKey(olc::W).bHeld)
-    {
-        m_camera.UpdatePosition(0.0, 0.0, 8.0 * fElapsedTime);
-    }
-    if (GetKey(olc::S).bHeld)
-    {
-        m_camera.UpdatePosition(0.0, 0.0, -8.0 * fElapsedTime);
-    }
+    UpdateCameraFromInput(fElapsedTime);
 
     m_theta += 0.5 * static_cast<double>(fElapsedTime);
 
     //m_rotateZ.Update(m_theta);
-
-    m_spinMat.Update(m_spin);
-
     //m_rotateX.Update(m_theta);
+    m_spinMat.Update(m_spin);
 
     //Matrix4x4 worldMatrix = m_rotateZ * m_rotateX;
     Vector3D one(1.0, 1.0, 0.0);
@@ -90,7 +54,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     Matrix4x4 cameraView = m_camera.CreateLookAtMatrix();
 
     // Update planet position and size
-    m_planet.UpdatePosAndOrient(5.0 * sin(m_theta), 5.0 * cos(m_theta), 8.0, m_spin);
+    m_planet.UpdatePosAndOrient(5.0 * sin(m_theta), 0, 8.0 + 5 * cos(m_theta), m_spin);
     Vector3D xyzScaling(m_planet.GetSize() * static_cast<double>(ScreenWidth()), m_planet.GetSize() * static_cast<double>(ScreenHeight()), 1.0);
 
     // Called once per frame
@@ -111,9 +75,9 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
             // Clip viewed triangle against near plane. This could form up to two additional triangles
             std::vector<Triangle> clippedTris(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
 
-            unsigned int nClippedTriangles = ClipAgainstPlane(zNearPlane, zNormal, tri, clippedTris[0], clippedTris[1]);
+            size_t nClippedTriangles = ClipAgainstPlane(zNearPlane, zNormal, tri, clippedTris[0], clippedTris[1]);
 
-            for (unsigned int n = 0; n < nClippedTriangles; ++n)
+            for (size_t n = 0; n < nClippedTriangles; ++n)
             {
                 // Project from 3D space to 2D
                 clippedTris[n] *= m_projectionMatrix;
@@ -198,16 +162,15 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     return true;
 }
 
-unsigned int SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle,
+size_t SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle,
     Triangle &outTri1, Triangle &outTri2) const
 {
     // Ensure it has been normalised
     planeNormal.Normalise();
 
     // Return shortest distance from point to plane
-    auto shortestDist = [planePoint, planeNormal](Vector3D p)
+    auto shortestDist = [planePoint, planeNormal](const Vector3D& p)
     {
-        p.Normalise();
         return (planeNormal.GetX() * p.GetX() + planeNormal.GetY() * p.GetY() + planeNormal.GetZ() * p.GetZ() - planeNormal.Dot(planePoint));
     };
 
@@ -253,14 +216,14 @@ unsigned int SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3
     if (nInsidePointCount == 0)
     {
         // All points lie on the outside of the plane. Clip the whole triangle
-        return 0U;
+        return 0;
     }
     else if (nInsidePointCount == 3)
     {
         // All points lie on the inside of the plane. Do nothing
         outTri1 = inputTriangle;
 
-        return 1U;
+        return 1;
     }
     else if (nInsidePointCount == 1 && nOutsidePointCount == 2)
     {
@@ -276,7 +239,7 @@ unsigned int SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3
         outTri1.vert2 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[0]);
         outTri1.vert3 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[0], outsidePoints[1]);
 
-        return 1U;
+        return 1;
     }
     else if (nInsidePointCount == 2 && nOutsidePointCount == 1)
     {
@@ -299,10 +262,49 @@ unsigned int SandboxEngine::ClipAgainstPlane(const Vector3D& planePoint, Vector3
         outTri2.vert2 = outTri1.vert2;
         outTri2.vert3 = Vector3D::IntersectPlane(planePoint, planeNormal, insidePoints[1], outsidePoints[0]);
 
-        return 2U;
+        return 2;
     }
     else
     {
         throw std::runtime_error("Something has gone horribly wrong");
+    }
+}
+
+void SandboxEngine::UpdateCameraFromInput(float fElapsedTime)
+{
+    // Move camera up down left and right
+    if (GetKey(olc::UP).bHeld)
+    { 
+        m_camera.UpdatePosition(0.0, -8.0 * fElapsedTime, 0.0);
+    }
+    if (GetKey(olc::DOWN).bHeld)
+    {
+        m_camera.UpdatePosition(0.0, 8.0 * fElapsedTime, 0.0);
+    }
+    if (GetKey(olc::LEFT).bHeld)
+    {
+        m_camera.UpdatePosition(-8.0 * fElapsedTime, 0.0, 0.0);
+    }
+    if (GetKey(olc::RIGHT).bHeld)
+    {
+        m_camera.UpdatePosition(8.0 * fElapsedTime, 0.0, 0.0);
+    }
+
+    // FPS controls
+    if(GetKey(olc::A).bHeld)
+    {
+        //m_spin += 2.0 * fElapsedTime;
+    }
+    if (GetKey(olc::D).bHeld)
+    {
+        //m_spin -= 2.0 * fElapsedTime;
+    }
+    if (GetKey(olc::W).bHeld)
+    {
+        m_camera.UpdatePosition(0.0, 0.0, 8.0 * fElapsedTime);
+    }
+    if (GetKey(olc::S).bHeld)
+    {
+        m_camera.UpdatePosition(0.0, 0.0, -8.0 * fElapsedTime);
     }
 }
