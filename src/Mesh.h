@@ -9,10 +9,9 @@ class Mesh
 public:
     Mesh();
     Mesh(const std::vector<Triangle>& triangles);
-    Mesh(const std::string& objFileLocation);
+    Mesh(const std::string& objFileLocation, double size);
 
     //static Mesh CreateCube();
-    //static Mesh CreateCoolShip(const std::string& location);
     void AddTriangle(const Triangle& tri) { m_transformedTriangles.push_back(tri); }
     std::vector<Triangle> GetTriangles() const { return m_transformedTriangles; }
 protected:

@@ -8,5 +8,5 @@
 class ObjFileLoader
 {
 public:
-    static std::vector<Triangle> Load(const std::string& fileName);
+    static std::vector<Triangle> Load(const std::string& fileName, double size);
 };

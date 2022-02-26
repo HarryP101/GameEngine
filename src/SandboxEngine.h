@@ -27,9 +27,10 @@ private:
 
 	Sun m_sun;
 	Camera m_camera;
-	Planet m_planet;
 
-	double m_theta;
+	// Might make this its own class for clarity
+	std::vector<Planet> m_solarSystem;
+
 	double m_spin;
 
 	size_t ClipAgainstPlane(const Vector3D& planePoint, Vector3D planeNormal, const Triangle& inputTriangle, Triangle &outTri1, Triangle &outTri2) const;

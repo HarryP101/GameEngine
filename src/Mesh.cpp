@@ -8,7 +8,9 @@ Mesh::Mesh() : m_originalTriangles(), m_transformedTriangles() {}
 
 Mesh::Mesh(const std::vector<Triangle>& triangles) : m_originalTriangles(triangles), m_transformedTriangles(triangles) {}
 
-Mesh::Mesh(const std::string& objFileLocation) : m_originalTriangles(ObjFileLoader::Load(objFileLocation)), m_transformedTriangles(m_originalTriangles) {}
+Mesh::Mesh(const std::string& objFileLocation, double size) : m_originalTriangles(ObjFileLoader::Load(objFileLocation, size)),
+    m_transformedTriangles(m_originalTriangles) {}
+    
 /*
 Mesh Mesh::CreateCube()
 {
@@ -54,21 +56,6 @@ Mesh Mesh::CreateCube()
     mesh.AddTriangle(tri10);
     mesh.AddTriangle(tri11);
     mesh.AddTriangle(tri12);
-
-    return mesh;
-}
-
-Mesh Mesh::CreateCoolShip(const std::string& location)
-{
-    Mesh mesh;
-    try 
-    {
-        mesh = ObjFileLoader::Load(location);
-    }
-    catch(std::runtime_error& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
 
     return mesh;
 }

@@ -11,8 +11,7 @@
 #include "RotationMatrix4x4.h"
 
 SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_rotateX(RotationMatrix4x4::Axis::X, 0.0), m_rotateZ(RotationMatrix4x4::Axis::Z, 0.0),
-    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 3.0, -5.0)),
-    m_planet(Vector3D(5.0, 5.0, 8.0), 0.5, "sampleobjects/sphere.obj"), m_theta(0.0), m_spin(0.0)
+    m_spinMat(RotationMatrix4x4::Axis::Z, 0.0), m_sun(Vector3D(0.0, 0.0, 8.0)), m_camera(Vector3D(0.0, 0.0, -5.0)), m_spin(0.0)
 {
     sAppName = "Harrys Example";
 }
@@ -20,6 +19,9 @@ SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_rotateX(Rotat
 bool SandboxEngine::OnUserCreate()
 {
     // Called once at the start, so create things here
+    m_solarSystem.push_back(Planet(1.5e11, 30, 0.5, 0.6, "sampleobjects/sphere.obj"));
+    //m_solarSystem.push_back(Planet(9.0, 60, 0.3, 0.8, "sampleobjects/sphere.obj"));
+    //m_solarSystem.push_back(Planet(3.0, 10, 0.9, 0.5, "sampleobjects/sphere.obj"));
 
     // Set up projection matrix
     constexpr double zNear = 0.1;
@@ -40,7 +42,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     UpdateCameraFromInput(fElapsedTime);
 
-    m_theta += 0.5 * static_cast<double>(fElapsedTime);
+    //m_theta += 0.5 * static_cast<double>(fElapsedTime);
 
     //m_rotateZ.Update(m_theta);
     //m_rotateX.Update(m_theta);
@@ -53,110 +55,117 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     m_camera.UpdateTarget(0.0, 0.0, 0.0);
     Matrix4x4 cameraView = m_camera.CreateLookAtMatrix();
 
-    // Update planet position and size
-    m_planet.UpdatePosAndOrient(5.0 * sin(m_theta), 0, 8.0 + 5 * cos(m_theta), m_spin);
-    Vector3D xyzScaling(m_planet.GetSize() * static_cast<double>(ScreenWidth()), m_planet.GetSize() * static_cast<double>(ScreenHeight()), 1.0);
-
-    // Called once per frame
-    auto triangles = m_planet.GetTriangles();
-    std::vector<Triangle> trisToRaster;
-    // Determine which triangles to draw
-    for (auto& tri : triangles)
-    {
-        // Can choose any vertice here as the triangle exists in a plane
-        if (tri.CanBeSeen(m_camera.GetPosition()))
-        {
-            // Illumination
-            tri.illum = m_sun.GetIllumination(tri.vert1, tri.normal);
-
-            // Convert world space to view space
-            tri *= cameraView;
-
-            // Clip viewed triangle against near plane. This could form up to two additional triangles
-            std::vector<Triangle> clippedTris(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
-
-            size_t nClippedTriangles = ClipAgainstPlane(zNearPlane, zNormal, tri, clippedTris[0], clippedTris[1]);
-
-            for (size_t n = 0; n < nClippedTriangles; ++n)
-            {
-                // Project from 3D space to 2D
-                clippedTris[n] *= m_projectionMatrix;
-
-                // Scale into view
-                clippedTris[n] += one;
-                clippedTris[n] *= xyzScaling;
-
-                trisToRaster.push_back(clippedTris[n]);
-            }
-        }
-    }
-
-    std::sort(trisToRaster.begin(), trisToRaster.end(), [](Triangle &t1, Triangle &t2){ return t1.GetCentroid().GetZ() > t2.GetCentroid().GetZ(); });
-    
     Clear(olc::BLACK);
 
-    for (const auto& triRaster : trisToRaster)
+    // Draw sun - TODO
+    DrawCircle(ScreenWidth() / 2, ScreenHeight() / 2, 2);
+
+    Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
+
+    // Update planet position and size
+    for (auto& planet : m_solarSystem)
     {
-        // Clip triangles against all four screen edges. Create a queue (list??) to traverse
-        // all new triangles so we only test new triangles generated against plane
+        planet.UpdatePosAndOrient(fElapsedTime);
 
-        std::vector<Triangle> clipped(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
-        std::list<Triangle> listTriangles;
-
-        // Add initial triangle
-        listTriangles.push_back(triRaster);
-        size_t nNewTriangles = 1;
-
-        for (unsigned int p = 0; p < 4; ++p)
+        // Called once per frame
+        auto triangles = planet.GetTriangles();
+        std::vector<Triangle> trisToRaster;
+        // Determine which triangles to draw
+        for (auto& tri : triangles)
         {
-            size_t nTrisToAdd = 0;
-            while (nNewTriangles > 0)
+            // Can choose any vertice here as the triangle exists in a plane
+            if (tri.CanBeSeen(m_camera.GetPosition()))
             {
-                // Take triangle from front of queue
-                Triangle test = listTriangles.front();
-                listTriangles.pop_front();
-                nNewTriangles--;
+                // Illumination
+                tri.illum = m_sun.GetIllumination(tri.vert1, tri.normal);
 
-                // Clip against plane. Only need to test each subsequent plane, against
-                // subsequent new triangles as all triangles after plane clip are guaranteed to
-                // lie on the inside of the plane
-                switch(p)
-                {
-                    case 0:
-                        nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), test, clipped[0], clipped[1]);
-                        break;
-                    case 1:
-                        nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, static_cast<double>(ScreenHeight()) - 1.0, 0.0), Vector3D(0.0, -1.0, 0.0),
-                            test, clipped[0], clipped[1]);
-                        break;
-                    case 2:
-                        nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), test, clipped[0], clipped[1]);
-                        break;
-                    case 3:
-                        nTrisToAdd = ClipAgainstPlane(Vector3D(static_cast<double>(ScreenWidth()) - 1.0, 0.0, 0.0), Vector3D(-1.0, 0.0, 0.0),
-                            test, clipped[0], clipped[1]);
-                        break;
-                    default:
-                        break;
-                }
+                // Convert world space to view space
+                tri *= cameraView;
 
-                // Add new triangles generated to queue
-                for (size_t w = 0; w < nTrisToAdd; ++w)
+                // Clip viewed triangle against near plane. This could form up to two additional triangles
+                std::vector<Triangle> clippedTris(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
+
+                size_t nClippedTriangles = ClipAgainstPlane(zNearPlane, zNormal, tri, clippedTris[0], clippedTris[1]);
+
+                for (size_t n = 0; n < nClippedTriangles; ++n)
                 {
-                    listTriangles.push_back(clipped[w]);
+                    // Project from 3D space to 2D
+                    clippedTris[n] *= m_projectionMatrix;
+
+                    // Scale into view
+                    clippedTris[n] += one;
+                    clippedTris[n] *= xyzScaling;
+
+                    trisToRaster.push_back(clippedTris[n]);
                 }
             }
-            nNewTriangles = listTriangles.size();
         }
 
-        for (const auto& tri : listTriangles)
+        std::sort(trisToRaster.begin(), trisToRaster.end(), [](Triangle &t1, Triangle &t2){ return t1.GetCentroid().GetZ() > t2.GetCentroid().GetZ(); });
+
+        for (const auto& triRaster : trisToRaster)
         {
-            // Rasterize triangles
-            FillTriangle(tri.vert1.GetPixelX(), tri.vert1.GetPixelY(),
-                tri.vert2.GetPixelX(), tri.vert2.GetPixelY(),
-                tri.vert3.GetPixelX(), tri.vert3.GetPixelY(), tri.illum);
-        }
+            // Clip triangles against all four screen edges. Create a queue (list??) to traverse
+            // all new triangles so we only test new triangles generated against plane
 
+            std::vector<Triangle> clipped(2, Triangle(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 0.0, 0.0)));
+            std::list<Triangle> listTriangles;
+
+            // Add initial triangle
+            listTriangles.push_back(triRaster);
+            size_t nNewTriangles = 1;
+
+            for (unsigned int p = 0; p < 4; ++p)
+            {
+                size_t nTrisToAdd = 0;
+                while (nNewTriangles > 0)
+                {
+                    // Take triangle from front of queue
+                    Triangle test = listTriangles.front();
+                    listTriangles.pop_front();
+                    nNewTriangles--;
+
+                    // Clip against plane. Only need to test each subsequent plane, against
+                    // subsequent new triangles as all triangles after plane clip are guaranteed to
+                    // lie on the inside of the plane
+                    switch(p)
+                    {
+                        case 0:
+                            nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, 0.0, 0.0), Vector3D(0.0, 1.0, 0.0), test, clipped[0], clipped[1]);
+                            break;
+                        case 1:
+                            nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, static_cast<double>(ScreenHeight()) - 1.0, 0.0), Vector3D(0.0, -1.0, 0.0),
+                                test, clipped[0], clipped[1]);
+                            break;
+                        case 2:
+                            nTrisToAdd = ClipAgainstPlane(Vector3D(0.0, 0.0, 0.0), Vector3D(1.0, 0.0, 0.0), test, clipped[0], clipped[1]);
+                            break;
+                        case 3:
+                            nTrisToAdd = ClipAgainstPlane(Vector3D(static_cast<double>(ScreenWidth()) - 1.0, 0.0, 0.0), Vector3D(-1.0, 0.0, 0.0),
+                                test, clipped[0], clipped[1]);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // Add new triangles generated to queue
+                    for (size_t w = 0; w < nTrisToAdd; ++w)
+                    {
+                        listTriangles.push_back(clipped[w]);
+                    }
+                }
+                nNewTriangles = listTriangles.size();
+            }
+
+            for (const auto& tri : listTriangles)
+            {
+                // Rasterize triangles
+                FillTriangle(tri.vert1.GetPixelX(), tri.vert1.GetPixelY(),
+                    tri.vert2.GetPixelX(), tri.vert2.GetPixelY(),
+                    tri.vert3.GetPixelX(), tri.vert3.GetPixelY(), tri.illum);
+            }
+
+        }
     }
 
     return true;

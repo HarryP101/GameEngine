@@ -6,14 +6,16 @@
 #include "Mesh.h"
 #include "Triangle.h"
 
+// Assumes perfect circular motion about the centre of some massive object
+// Not calculating any grav forces... yet!!
 class Planet : public Mesh
 {
 public:
     Planet();
-    Planet(const Vector3D& initialPos, double size, const std::string& objFileLocation);
-    void UpdatePosAndOrient(double x, double y, double z, double theta);
-    constexpr double GetSize() const { return m_size; }
+    Planet(double orbitRadius, double initialTheta, double speed, double size, const std::string& objFileLocation);
+    void UpdatePosAndOrient(float fElapsedTime);
 private:
-    Vector3D m_position;
-    double m_size;
+    double m_orbitRadius;
+    double m_theta;
+    double m_speed;
 };
