@@ -11,11 +11,25 @@
 class Planet : public Mesh
 {
 public:
+    enum class Colour {RED, GREEN, BLUE};
+
+    struct MassAndPosition
+    {
+        double mass;
+        double x;
+        double y;
+        double z;
+    };
+
     Planet();
-    Planet(double orbitRadius, double initialTheta, double speed, double size, const std::string& objFileLocation);
+    Planet(double orbitRadius, double initialTheta, double size, Colour colour, const std::string& objFileLocation);
     void UpdatePosAndOrient(float fElapsedTime);
+    Colour GetColour() const;
+
+    MassAndPosition GetMassAndPosition() const;
+
 private:
     double m_orbitRadius;
     double m_theta;
-    double m_speed;
+    Colour m_colour;
 };
