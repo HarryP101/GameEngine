@@ -6,11 +6,13 @@
 MarsShuttle::MarsShuttle(const Vector3D& position, double mass) : m_position(position), m_velocity(0.0, 0.0, 0.0), m_acceleration(0.0, 0.0, 0.0),
     m_launched(false), m_mass(mass) {}
 
-bool MarsShuttle::Launch()
+bool MarsShuttle::Launch(const Planet::MassAndPosition& earth)
 {
     std::cout << "Launched!\n";
     m_launched = true;
-    m_velocity = Vector3D(-1500.0, 0.0, 0.0);
+
+    m_velocity = CalcLaunchVelocity(earth);
+    //m_velocity = Vector3D(-60000.0, 0.0, 0.0);
     return true;
 }
 
@@ -36,7 +38,7 @@ void MarsShuttle::UpdatePosition(float fElapsedTime, const Planet::MassAndPositi
     }
     else
     {
-        m_position = Vector3D(earth.x, earth.y + 3e8, earth.z);
+        m_position = Vector3D(earth.x, earth.y + 3e10, earth.z);
     }
 }
 
@@ -58,4 +60,18 @@ void MarsShuttle::UpdateAcceleration(const Planet::MassAndPosition& earth, const
     rShuttleMars.Normalise();
 
     m_acceleration = (rShuttleEarth * earthGravForce + rShuttleMars * marsGravForce) * (1.0 / m_mass);
+}
+
+Vector3D MarsShuttle::CalcLaunchVelocity(const Planet::MassAndPosition& earth) const
+{
+    Vector3D orbitVec = m_position - Vector3D(earth.x, earth.y, earth.z);
+    double orbitRadius = orbitVec.Mag();
+    double velMagReq = std::sqrt(Constants::G * Constants::EARTH_MASS / orbitRadius);
+
+    double angle = std::atan(orbitVec.GetY() / orbitVec.GetX());
+
+    double xVelReq = velMagReq * sin(angle);
+    double yVelReq = velMagReq * cos(angle);
+
+    return Vector3D(xVelReq, yVelReq, 0.0);
 }

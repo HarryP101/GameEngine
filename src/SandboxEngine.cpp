@@ -13,7 +13,7 @@
 #include "MarsShuttle.h"
 #include "ProjectionMatrix.h"
 
-constexpr unsigned int N_SIM_SECONDS_PER_REAL_SECOND = 600000;
+constexpr unsigned int N_SIM_SECONDS_PER_REAL_SECOND = 6200000;
 constexpr unsigned int GRANULARITY = 100;
 
 SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_sun(Vector3D(0.0, 0.0, 8.0), "sampleobjects/sphere.obj", 0.5),
@@ -395,6 +395,6 @@ void SandboxEngine::UpdateCameraFromInput(float fElapsedTime)
     // Launch the shuttle
     if (GetKey(olc::ENTER).bPressed)
     {
-        m_marsShuttle.Launch();
+        m_marsShuttle.Launch(m_solarSystem[0].GetMassAndPosition());
     }
 }

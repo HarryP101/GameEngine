@@ -8,7 +8,7 @@ class MarsShuttle
 public:
     MarsShuttle(const Vector3D& position, double mass);
 
-    bool Launch();
+    bool Launch(const Planet::MassAndPosition& earth);
 
     void UpdatePosition(float fElapsedTime, const Planet::MassAndPosition& earth, const Planet::MassAndPosition& mars);
 
@@ -18,6 +18,7 @@ public:
 
 private:
     void UpdateAcceleration(const Planet::MassAndPosition& earth, const Planet::MassAndPosition& mars);
+    Vector3D CalcLaunchVelocity(const Planet::MassAndPosition& earth) const;
     Vector3D m_position;
     Vector3D m_velocity;
     Vector3D m_acceleration;
