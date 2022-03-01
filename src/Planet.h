@@ -23,7 +23,7 @@ public:
 
     Planet();
     Planet(double orbitRadius, double initialTheta, double size, Colour colour, const std::string& objFileLocation);
-    void UpdatePosAndOrient(float fElapsedTime);
+    void UpdatePosAndOrient(float fElapsedTime, double simSecondsPerRealSecond);
     Colour GetColour() const;
 
     MassAndPosition GetMassAndPosition() const;

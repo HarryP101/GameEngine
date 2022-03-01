@@ -16,7 +16,7 @@ Planet::Planet(double orbitRadius, double initialTheta, double size, Colour colo
 
 }
 
-void Planet::UpdatePosAndOrient(float fElapsedTime)
+void Planet::UpdatePosAndOrient(float fElapsedTime, double simSecondsPerRealSecond)
 {
     // TODO: update orientation
     //(void)theta;
@@ -24,9 +24,7 @@ void Planet::UpdatePosAndOrient(float fElapsedTime)
     auto speed = std::sqrt(Constants::SOLAR_MASS * Constants::G / m_orbitRadius);
     auto angularSpeed = speed / m_orbitRadius;
 
-    // 1 second here = 10 weeks in normal time...
-    angularSpeed *= 10 * Constants::SECONDS_IN_A_WEEK;
-    m_theta += angularSpeed * static_cast<double>(fElapsedTime);
+    m_theta += angularSpeed * static_cast<double>(fElapsedTime) * simSecondsPerRealSecond;
 
     // Make sure to scale back to screen space...
     // TODO make this clearer
@@ -49,7 +47,7 @@ Planet::Colour Planet::GetColour() const
 
 Planet::MassAndPosition Planet::GetMassAndPosition() const
 {
-    auto cartesianX = 2.0e-11 * m_orbitRadius * sin(m_theta);
-    auto cartesianY = 2.0e-11 * m_orbitRadius * cos(m_theta);
-    return MassAndPosition {0.0, cartesianX, cartesianY, 8.0};
+    auto cartesianX = m_orbitRadius * sin(m_theta);
+    auto cartesianY = m_orbitRadius * cos(m_theta);
+    return MassAndPosition {Constants::EARTH_MASS, cartesianX, cartesianY, 8.0};
 }

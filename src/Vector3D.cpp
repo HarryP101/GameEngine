@@ -30,6 +30,11 @@ void Vector3D::Normalise()
     m_z /= magnitude;
 }
 
+double Vector3D::Mag() const
+{
+    return std::sqrt(m_x*m_x + m_y*m_y + m_z*m_z);
+}
+
 Vector3D Vector3D::operator+(const Vector3D& rhs) const
 {
     return Vector3D(m_x + rhs.m_x, m_y + rhs.m_y, m_z + rhs.m_z);

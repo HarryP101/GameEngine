@@ -8,10 +8,16 @@
 #include "Triangle.h"
 #include "Vector3D.h"
 #include "Constants.h"
-#include "RotationMatrix4x4.h"
+#include "Sun.h"
+#include "Planet.h"
+#include "MarsShuttle.h"
+#include "ProjectionMatrix.h"
+
+constexpr unsigned int N_SIM_SECONDS_PER_REAL_SECOND = 600000;
+constexpr unsigned int GRANULARITY = 100;
 
 SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_sun(Vector3D(0.0, 0.0, 8.0), "sampleobjects/sphere.obj", 0.5),
-    m_camera(Vector3D(0.0, 0.0, -5.0))
+    m_camera(Vector3D(0.0, 0.0, -5.0)), m_marsShuttle(Vector3D(1.5*sin(30), 1.5*cos(30), 8.0), 4.0e4)
 {
     sAppName = "Harrys Example";
 }
@@ -21,10 +27,10 @@ bool SandboxEngine::OnUserCreate()
     // Called once at the start, so create things here
     
     // EARTH
-    m_solarSystem.push_back(Planet(1.5e11, 30, 1.6, Planet::Colour::BLUE, "sampleobjects/sphere.obj"));
+    m_solarSystem.push_back(Planet(1.5e11, 30, 0.2, Planet::Colour::BLUE, "sampleobjects/sphere.obj"));
 
     // MARS
-    m_solarSystem.push_back(Planet(7.5e11, 60, 1.2, Planet::Colour::RED, "sampleobjects/sphere.obj"));
+    m_solarSystem.push_back(Planet(7.5e11, 60, 0.15, Planet::Colour::RED, "sampleobjects/sphere.obj"));
 
     //m_solarSystem.push_back(Planet(3.0, 10, 0.9, 0.5, "sampleobjects/sphere.obj"));
 
@@ -47,8 +53,6 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     UpdateCameraFromInput(fElapsedTime);
 
-    //m_theta += 0.5 * static_cast<double>(fElapsedTime);
-
     Vector3D one(1.0, 1.0, 0.0);
 
     // Update camera position and target. Gen new matrix
@@ -57,13 +61,41 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     Clear(olc::BLACK);
 
+    // Only draw the final one though
     Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
+
+    for (unsigned int i = 0; i < N_SIM_SECONDS_PER_REAL_SECOND / GRANULARITY; ++i)
+    {
+        // Update the shuttles position - TODO: TIDY UP
+        m_marsShuttle.UpdatePosition(fElapsedTime * GRANULARITY, m_solarSystem[0].GetMassAndPosition(), m_solarSystem[1].GetMassAndPosition());
+    }
+
+    if (m_marsShuttle.HasLaunched())
+    {
+        auto shuttlePosition = m_marsShuttle.GetPosition();
+        m_shuttlePath.push_back(shuttlePosition);
+    }
+
+    std::vector<Vector3D> pointsToRaster;
+    for (const auto& pos : m_shuttlePath)
+    {
+        auto viewedShuttlePosition = pos * cameraView;
+
+        // Project from 3D space to 2D
+        auto projectedShuttlePosition = viewedShuttlePosition * m_projectionMatrix;
+
+        // Scale into view
+        projectedShuttlePosition += one;
+        auto scaledShuttlePosition = projectedShuttlePosition.Scale(xyzScaling);
+
+        pointsToRaster.push_back(scaledShuttlePosition);
+    }
 
     std::vector<Triangle> trisToRaster;
     // Update planet position and size and add to triangles to be rastered
     for (auto& planet : m_solarSystem)
     {
-        planet.UpdatePosAndOrient(fElapsedTime);
+        planet.UpdatePosAndOrient(0.0, N_SIM_SECONDS_PER_REAL_SECOND);
 
         // Called once per frame
         auto triangles = planet.GetTriangles();
@@ -197,6 +229,17 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
             FillTriangle(tri.vert1.GetPixelX(), tri.vert1.GetPixelY(),
                 tri.vert2.GetPixelX(), tri.vert2.GetPixelY(),
                 tri.vert3.GetPixelX(), tri.vert3.GetPixelY(), tri.illum);
+        }
+    }
+
+    
+    if (pointsToRaster.size() > 1)
+    {
+        for (size_t i = 0; i < pointsToRaster.size()-1; ++i)
+        {
+            auto sP = pointsToRaster[i];
+            auto eP = pointsToRaster[i+1];
+            DrawLine({sP.GetPixelX(), sP.GetPixelY()}, {eP.GetPixelX(), eP.GetPixelY()});
         }
     }
 
@@ -347,5 +390,11 @@ void SandboxEngine::UpdateCameraFromInput(float fElapsedTime)
     if (GetKey(olc::S).bHeld)
     {
         m_camera.UpdatePosition(0.0, 0.0, -8.0 * fElapsedTime);
+    }
+
+    // Launch the shuttle
+    if (GetKey(olc::ENTER).bPressed)
+    {
+        m_marsShuttle.Launch();
     }
 }

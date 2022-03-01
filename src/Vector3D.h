@@ -21,6 +21,8 @@ public:
 
     void Normalise();
 
+    double Mag() const;
+
     Vector3D operator+(const Vector3D& rhs) const;
     Vector3D& operator+=(const Vector3D& rhs);
 
