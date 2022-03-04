@@ -13,18 +13,17 @@ class Planet : public Mesh
 public:
     enum class Colour {RED, GREEN, BLUE};
 
-    struct Position
+    struct PlanetData
     {
-        double x;
-        double y;
-        double z;
+        Vector3D position;
+        double mass;
     };
 
     Planet();
     Planet(double orbitRadius, double initialTheta, double depthIntoScreen, double size, Colour colour, const std::string& objFileLocation);
-    void UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRealSecond);
+    void UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRealSecond, const Vector3D& screenScaling);
     Colour GetColour() const;
-    Position GetRealPosition() const;
+    PlanetData GetPlanetData() const;
 
 private:
     double m_orbitRadius;

@@ -16,7 +16,7 @@ Planet::Planet(double orbitRadius, double initialTheta, double depthIntoScreen, 
 
 }
 
-void Planet::UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRealSecond)
+void Planet::UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRealSecond, const Vector3D& screenScaling)
 {
     // TODO: update orientation
     //(void)theta;
@@ -28,8 +28,8 @@ void Planet::UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRe
 
     // Make sure to scale back to screen space...
     // TODO make this clearer
-    auto screenX = 2.0e-11 * m_orbitRadius * sin(m_theta);
-    auto screenY = 2.0e-11 * m_orbitRadius * cos(m_theta);
+    auto screenX = screenScaling.GetX() * m_orbitRadius * sin(m_theta);
+    auto screenY = screenScaling.GetY() * m_orbitRadius * cos(m_theta);
 
     for (size_t i = 0; i < m_originalTriangles.size(); ++i)
     {
@@ -42,9 +42,9 @@ Planet::Colour Planet::GetColour() const
     return m_colour;
 }
 
-Planet::Position Planet::GetRealPosition() const
+Planet::PlanetData Planet::GetPlanetData() const
 {
     auto cartesianX = m_orbitRadius * sin(m_theta);
     auto cartesianY = m_orbitRadius * cos(m_theta);
-    return Position {cartesianX, cartesianY, m_z};
+    return PlanetData {Vector3D(cartesianX, cartesianY, m_z), Constants::EARTH_MASS};
 }

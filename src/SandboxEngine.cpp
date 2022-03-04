@@ -13,9 +13,6 @@
 #include "MarsShuttle.h"
 #include "ProjectionMatrix.h"
 
-constexpr unsigned int N_SIM_SECONDS_PER_REAL_SECOND = 6200000;
-constexpr unsigned int GRANULARITY = 100;
-
 // For now, I will consider only simple circular orbits (constant z value into the screen)
 constexpr double OBJECT_DEPTH_INTO_SCREEN = 8.0;
 constexpr double SHUTTLE_MASS = 4.0e4;
@@ -24,7 +21,10 @@ constexpr double CAMERA_DEPTH_INTO_SCREEN = -5.0;
 
 const Vector3D SCREEN_SCALING(2.0e-11, 2.0e-11, 8.0);
 
-SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0),
+SandboxEngine::SandboxEngine(unsigned int simSecsPerRealSec, unsigned int granularity)
+  : m_simSecsPerRealSec(simSecsPerRealSec),
+    m_granularity(granularity),
+    m_lookDirection(0.0, 0.0, 1.0),
     m_sun(Vector3D(0.0, 0.0, OBJECT_DEPTH_INTO_SCREEN), "sampleobjects/sphere.obj", 0.5),
     m_camera(Vector3D(0.0, 0.0, CAMERA_DEPTH_INTO_SCREEN)),
     m_marsShuttle(Vector3D(1.5*sin(30), 1.5*cos(30), OBJECT_DEPTH_INTO_SCREEN), SHUTTLE_MASS)
@@ -77,10 +77,10 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     // Only draw the final one though
     Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
 
-    for (unsigned int i = 0; i < N_SIM_SECONDS_PER_REAL_SECOND / GRANULARITY; ++i)
+    for (unsigned int i = 0; i < m_simSecsPerRealSec / m_granularity; ++i)
     {
         // Update the shuttles position - TODO: TIDY UP
-        m_marsShuttle.UpdatePosition(fElapsedTime * GRANULARITY, m_solarSystem[0].GetRealPosition(), m_solarSystem[1].GetRealPosition());
+        m_marsShuttle.UpdatePosition(fElapsedTime * m_granularity, m_solarSystem);
     }
 
     if (m_marsShuttle.HasLaunched())
@@ -105,10 +105,11 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     }
 
     std::vector<Triangle> trisToRaster;
+
     // Update planet position and size and add to triangles to be rastered
     for (auto& planet : m_solarSystem)
     {
-        planet.UpdateScreenPosAndOrient(0.0, N_SIM_SECONDS_PER_REAL_SECOND);
+        planet.UpdateScreenPosAndOrient(0.0, m_simSecsPerRealSec, SCREEN_SCALING);
 
         // Called once per frame
         auto triangles = planet.GetTriangles();
@@ -408,6 +409,6 @@ void SandboxEngine::UpdateCameraFromInput(float fElapsedTime)
     // Launch the shuttle
     if (GetKey(olc::ENTER).bPressed)
     {
-        m_marsShuttle.Launch(m_solarSystem[0].GetRealPosition());
+        m_marsShuttle.Launch(m_solarSystem[0].GetPlanetData());
     }
 }
