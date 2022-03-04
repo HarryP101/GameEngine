@@ -4,7 +4,7 @@ int main()
 {
 	SandboxEngine demo;
 
-	if (demo.Construct(400, 400, 4, 4))
+	if (demo.Construct(200, 200, 4, 4))
 	{
 		demo.Start();
 	}

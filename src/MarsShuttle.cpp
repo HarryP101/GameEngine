@@ -3,10 +3,10 @@
 #include "Constants.h"
 #include "Vector3D.h"
 
-MarsShuttle::MarsShuttle(const Vector3D& position, double mass) : m_position(position), m_velocity(0.0, 0.0, 0.0), m_acceleration(0.0, 0.0, 0.0),
+MarsShuttle::MarsShuttle(const Vector3D& realPosition, double mass) : m_realPosition(realPosition), m_velocity(0.0, 0.0, 0.0), m_acceleration(0.0, 0.0, 0.0),
     m_launched(false), m_mass(mass) {}
 
-bool MarsShuttle::Launch(const Planet::MassAndPosition& earth)
+bool MarsShuttle::Launch(const Planet::Position& earth)
 {
     std::cout << "Launched!\n";
     m_launched = true;
@@ -16,7 +16,7 @@ bool MarsShuttle::Launch(const Planet::MassAndPosition& earth)
     return true;
 }
 
-void MarsShuttle::UpdatePosition(float fElapsedTime, const Planet::MassAndPosition& earth, const Planet::MassAndPosition& mars)
+void MarsShuttle::UpdatePosition(float fElapsedTime, const Planet::Position& earth, const Planet::Position& mars)
 {
     if (m_launched)
     {
@@ -26,10 +26,10 @@ void MarsShuttle::UpdatePosition(float fElapsedTime, const Planet::MassAndPositi
         m_velocity += m_acceleration * fElapsedTime;
 
         // Update position from velocity
-        m_position += m_velocity * fElapsedTime;
+        m_realPosition += m_velocity * fElapsedTime;
 
         // Check position isnt inside the earth
-        if ((m_position - Vector3D(earth.x, earth.y, earth.z)).Mag() < 6378e3)
+        if ((m_realPosition - Vector3D(earth.x, earth.y, earth.z)).Mag() < 6378e3)
         {
             std::cout << "Crashed" << std::endl;
             // Rebound lol
@@ -38,23 +38,23 @@ void MarsShuttle::UpdatePosition(float fElapsedTime, const Planet::MassAndPositi
     }
     else
     {
-        m_position = Vector3D(earth.x, earth.y + 3e10, earth.z);
+        m_realPosition = Vector3D(earth.x, earth.y + 3e10, earth.z);
     }
 }
 
-Vector3D MarsShuttle::GetPosition() const
+Vector3D MarsShuttle::GetScreenPosition(const Vector3D& screenScaling) const
 {
-    return m_position.Scale(Vector3D(2.0e-11, 2.0e-11, 1.0));
+    return m_realPosition.Scale(screenScaling);
 }
 
-void MarsShuttle::UpdateAcceleration(const Planet::MassAndPosition& earth, const Planet::MassAndPosition& mars)
+void MarsShuttle::UpdateAcceleration(const Planet::Position& earth, const Planet::Position& mars)
 {
-    Vector3D rShuttleEarth = Vector3D(earth.x, earth.y, earth.z) - m_position;
+    Vector3D rShuttleEarth = Vector3D(earth.x, earth.y, earth.z) - m_realPosition;
     double earthGravForce = Constants::G * m_mass * Constants::EARTH_MASS / (std::pow(rShuttleEarth.Mag(), 2));
 
     rShuttleEarth.Normalise();
 
-    Vector3D rShuttleMars = Vector3D(mars.x, mars.y, mars.z) - m_position;
+    Vector3D rShuttleMars = Vector3D(mars.x, mars.y, mars.z) - m_realPosition;
     double marsGravForce = Constants::G * m_mass * Constants::MARS_MASS / (std::pow(rShuttleMars.Mag(), 2));
 
     rShuttleMars.Normalise();
@@ -62,9 +62,9 @@ void MarsShuttle::UpdateAcceleration(const Planet::MassAndPosition& earth, const
     m_acceleration = (rShuttleEarth * earthGravForce + rShuttleMars * marsGravForce) * (1.0 / m_mass);
 }
 
-Vector3D MarsShuttle::CalcLaunchVelocity(const Planet::MassAndPosition& earth) const
+Vector3D MarsShuttle::CalcLaunchVelocity(const Planet::Position& earth) const
 {
-    Vector3D orbitVec = m_position - Vector3D(earth.x, earth.y, earth.z);
+    Vector3D orbitVec = m_realPosition - Vector3D(earth.x, earth.y, earth.z);
     double orbitRadius = orbitVec.Mag();
     double velMagReq = std::sqrt(Constants::G * Constants::EARTH_MASS / orbitRadius);
 

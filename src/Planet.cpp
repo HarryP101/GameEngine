@@ -10,13 +10,13 @@
 
 Planet::Planet() : Mesh(), m_orbitRadius(0.0), m_theta(0.0) {}
 
-Planet::Planet(double orbitRadius, double initialTheta, double size, Colour colour, const std::string& objFileLocation) : Mesh(objFileLocation, size),
-    m_orbitRadius(orbitRadius), m_theta(initialTheta), m_colour(colour) 
+Planet::Planet(double orbitRadius, double initialTheta, double depthIntoScreen, double size, Colour colour, const std::string& objFileLocation) : Mesh(objFileLocation, size),
+    m_orbitRadius(orbitRadius), m_theta(initialTheta), m_depthIntoScreen(depthIntoScreen), m_colour(colour) 
 {
 
 }
 
-void Planet::UpdatePosAndOrient(float fElapsedTime, double simSecondsPerRealSecond)
+void Planet::UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRealSecond)
 {
     // TODO: update orientation
     //(void)theta;
@@ -28,15 +28,12 @@ void Planet::UpdatePosAndOrient(float fElapsedTime, double simSecondsPerRealSeco
 
     // Make sure to scale back to screen space...
     // TODO make this clearer
-    auto cartesianX = 2.0e-11 * m_orbitRadius * sin(m_theta);
-    auto cartesianY = 2.0e-11 * m_orbitRadius * cos(m_theta);
-
-    // Need a new variable
-    auto cartesianZ = 8.0;
+    auto screenX = 2.0e-11 * m_orbitRadius * sin(m_theta);
+    auto screenY = 2.0e-11 * m_orbitRadius * cos(m_theta);
 
     for (size_t i = 0; i < m_originalTriangles.size(); ++i)
     {
-        m_transformedTriangles[i] = m_originalTriangles[i] + Vector3D(cartesianX, cartesianY, cartesianZ);
+        m_transformedTriangles[i] = m_originalTriangles[i] + Vector3D(screenX, screenY, m_depthIntoScreen);
     }
 }
 
@@ -45,9 +42,9 @@ Planet::Colour Planet::GetColour() const
     return m_colour;
 }
 
-Planet::MassAndPosition Planet::GetMassAndPosition() const
+Planet::Position Planet::GetRealPosition() const
 {
     auto cartesianX = m_orbitRadius * sin(m_theta);
     auto cartesianY = m_orbitRadius * cos(m_theta);
-    return MassAndPosition {Constants::EARTH_MASS, cartesianX, cartesianY, 8.0};
+    return Position {cartesianX, cartesianY, m_z};
 }

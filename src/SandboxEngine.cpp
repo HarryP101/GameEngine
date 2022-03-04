@@ -16,8 +16,18 @@
 constexpr unsigned int N_SIM_SECONDS_PER_REAL_SECOND = 6200000;
 constexpr unsigned int GRANULARITY = 100;
 
-SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_sun(Vector3D(0.0, 0.0, 8.0), "sampleobjects/sphere.obj", 0.5),
-    m_camera(Vector3D(0.0, 0.0, -5.0)), m_marsShuttle(Vector3D(1.5*sin(30), 1.5*cos(30), 8.0), 4.0e4)
+// For now, I will consider only simple circular orbits (constant z value into the screen)
+constexpr double OBJECT_DEPTH_INTO_SCREEN = 8.0;
+constexpr double SHUTTLE_MASS = 4.0e4;
+
+constexpr double CAMERA_DEPTH_INTO_SCREEN = -5.0;
+
+const Vector3D SCREEN_SCALING(2.0e-11, 2.0e-11, 8.0);
+
+SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0),
+    m_sun(Vector3D(0.0, 0.0, OBJECT_DEPTH_INTO_SCREEN), "sampleobjects/sphere.obj", 0.5),
+    m_camera(Vector3D(0.0, 0.0, CAMERA_DEPTH_INTO_SCREEN)),
+    m_marsShuttle(Vector3D(1.5*sin(30), 1.5*cos(30), OBJECT_DEPTH_INTO_SCREEN), SHUTTLE_MASS)
 {
     sAppName = "Harrys Example";
 }
@@ -25,14 +35,17 @@ SandboxEngine::SandboxEngine() : m_lookDirection(0.0, 0.0, 1.0), m_sun(Vector3D(
 bool SandboxEngine::OnUserCreate()
 {
     // Called once at the start, so create things here
-    
+    std::string pathToSphereMesh("sampleobjects/sphere.obj");
+
     // EARTH
-    m_solarSystem.push_back(Planet(1.5e11, 30, 0.2, Planet::Colour::BLUE, "sampleobjects/sphere.obj"));
+    Planet earth(Constants::EARTH_ORBIT_RADIUS, 30, OBJECT_DEPTH_INTO_SCREEN, 0.2,
+        Planet::Colour::BLUE, pathToSphereMesh);
+    m_solarSystem.push_back(earth);
 
     // MARS
-    m_solarSystem.push_back(Planet(7.5e11, 60, 0.15, Planet::Colour::RED, "sampleobjects/sphere.obj"));
-
-    //m_solarSystem.push_back(Planet(3.0, 10, 0.9, 0.5, "sampleobjects/sphere.obj"));
+    Planet mars(Constants::MARS_ORBIT_RADIUS, 60, OBJECT_DEPTH_INTO_SCREEN, 0.15,
+        Planet::Colour::RED, pathToSphereMesh);
+    m_solarSystem.push_back(mars);
 
     // Set up projection matrix
     constexpr double zNear = 0.1;
@@ -67,12 +80,12 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     for (unsigned int i = 0; i < N_SIM_SECONDS_PER_REAL_SECOND / GRANULARITY; ++i)
     {
         // Update the shuttles position - TODO: TIDY UP
-        m_marsShuttle.UpdatePosition(fElapsedTime * GRANULARITY, m_solarSystem[0].GetMassAndPosition(), m_solarSystem[1].GetMassAndPosition());
+        m_marsShuttle.UpdatePosition(fElapsedTime * GRANULARITY, m_solarSystem[0].GetRealPosition(), m_solarSystem[1].GetRealPosition());
     }
 
     if (m_marsShuttle.HasLaunched())
     {
-        auto shuttlePosition = m_marsShuttle.GetPosition();
+        auto shuttlePosition = m_marsShuttle.GetScreenPosition(SCREEN_SCALING);
         m_shuttlePath.push_back(shuttlePosition);
     }
 
@@ -95,7 +108,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     // Update planet position and size and add to triangles to be rastered
     for (auto& planet : m_solarSystem)
     {
-        planet.UpdatePosAndOrient(0.0, N_SIM_SECONDS_PER_REAL_SECOND);
+        planet.UpdateScreenPosAndOrient(0.0, N_SIM_SECONDS_PER_REAL_SECOND);
 
         // Called once per frame
         auto triangles = planet.GetTriangles();
@@ -395,6 +408,6 @@ void SandboxEngine::UpdateCameraFromInput(float fElapsedTime)
     // Launch the shuttle
     if (GetKey(olc::ENTER).bPressed)
     {
-        m_marsShuttle.Launch(m_solarSystem[0].GetMassAndPosition());
+        m_marsShuttle.Launch(m_solarSystem[0].GetRealPosition());
     }
 }
