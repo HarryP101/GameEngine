@@ -19,8 +19,11 @@ bool MarsShuttle::Launch(const Planet::PlanetData& earth)
 void MarsShuttle::UpdatePosition(float fElapsedTime, const std::vector<Planet>& planets)
 {
     Planet::PlanetData earth = planets[0].GetPlanetData();
+
     if (m_launched)
     {
+        // Shuttle has detached from planet and become a free body
+
         UpdateAcceleration(planets);
 
         // Update velocity from acceleration
@@ -39,7 +42,9 @@ void MarsShuttle::UpdatePosition(float fElapsedTime, const std::vector<Planet>& 
     }
     else
     {
-        m_realPosition = earth.position + Vector3D(0.0, 3e10, 0.0);
+        // Shuttle is attached to planet
+        m_realPosition = earth.position + Vector3D(0.0, 3e8, 0.0);
+        m_velocity = earth.velocity;
     }
 }
 
@@ -57,7 +62,7 @@ void MarsShuttle::UpdateAcceleration(const std::vector<Planet>& planets)
         auto planetData = planet.GetPlanetData();
 
         Vector3D rShuttleToPlanet = planetData.position - m_realPosition;
-        double planetGravForce = Constants::G * planetData.mass * m_mass / (std::pow(rShuttleToPlanet.Mag(), 2));
+        double planetGravForce = Constants::G * planetData.mass * m_mass / (rShuttleToPlanet.MagSq());
 
         rShuttleToPlanet.Normalise();
 
@@ -69,14 +74,15 @@ void MarsShuttle::UpdateAcceleration(const std::vector<Planet>& planets)
 
 Vector3D MarsShuttle::CalcLaunchVelocity(const Planet::PlanetData& earth) const
 {
+    // This doesnt work as intended... yet...
     Vector3D orbitVec = m_realPosition - earth.position;
     double orbitRadius = orbitVec.Mag();
     double velMagReq = std::sqrt(Constants::G * earth.mass / orbitRadius);
 
     double angle = std::atan(orbitVec.GetY() / orbitVec.GetX());
 
-    double xVelReq = velMagReq * sin(angle);
-    double yVelReq = velMagReq * cos(angle);
+    double xVelReq = velMagReq * cos(angle);
+    double yVelReq = velMagReq * -sin(angle);
 
-    return Vector3D(xVelReq, yVelReq, 0.0);
+    return Vector3D(xVelReq + m_velocity.GetX(), yVelReq + m_velocity.GetY(), 0.0);
 }

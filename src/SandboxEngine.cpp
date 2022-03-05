@@ -21,7 +21,7 @@ constexpr double CAMERA_DEPTH_INTO_SCREEN = -5.0;
 
 const Vector3D SCREEN_SCALING(2.0e-11, 2.0e-11, 8.0);
 
-SandboxEngine::SandboxEngine(unsigned int simSecsPerRealSec, unsigned int granularity)
+SandboxEngine::SandboxEngine(unsigned int simSecsPerRealSec, double granularity)
   : m_simSecsPerRealSec(simSecsPerRealSec),
     m_granularity(granularity),
     m_lookDirection(0.0, 0.0, 1.0),
@@ -66,8 +66,6 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
 
     UpdateCameraFromInput(fElapsedTime);
 
-    Vector3D one(1.0, 1.0, 0.0);
-
     // Update camera position and target. Gen new matrix
     m_camera.UpdateTarget(0.0, 0.0, 0.0);
     Matrix4x4 cameraView = m_camera.CreateLookAtMatrix();
@@ -75,12 +73,19 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     Clear(olc::BLACK);
 
     // Only draw the final one though
+    Vector3D one(1.0, 1.0, 0.0);
     Vector3D xyzScaling(0.5 * static_cast<double>(ScreenWidth()), 0.5 * static_cast<double>(ScreenHeight()), 1.0);
 
     for (unsigned int i = 0; i < m_simSecsPerRealSec / m_granularity; ++i)
     {
-        // Update the shuttles position - TODO: TIDY UP
+        // Update the shuttles position
         m_marsShuttle.UpdatePosition(fElapsedTime * m_granularity, m_solarSystem);
+
+        // Update planets position as well
+        for (auto& planet : m_solarSystem)
+        {
+            planet.UpdatePosition(fElapsedTime * m_granularity);
+        }
     }
 
     if (m_marsShuttle.HasLaunched())
@@ -109,7 +114,7 @@ bool SandboxEngine::OnUserUpdate(float fElapsedTime)
     // Update planet position and size and add to triangles to be rastered
     for (auto& planet : m_solarSystem)
     {
-        planet.UpdateScreenPosAndOrient(0.0, m_simSecsPerRealSec, SCREEN_SCALING);
+        planet.UpdateScreenPosAndOrient(SCREEN_SCALING);
 
         // Called once per frame
         auto triangles = planet.GetTriangles();
@@ -381,11 +386,11 @@ void SandboxEngine::UpdateCameraFromInput(float fElapsedTime)
     }
     if (GetKey(olc::LEFT).bHeld)
     {
-        m_camera.UpdatePosition(-8.0 * fElapsedTime, 0.0, 0.0);
+        m_camera.UpdatePosition(8.0 * fElapsedTime, 0.0, 0.0);
     }
     if (GetKey(olc::RIGHT).bHeld)
     {
-        m_camera.UpdatePosition(8.0 * fElapsedTime, 0.0, 0.0);
+        m_camera.UpdatePosition(-8.0 * fElapsedTime, 0.0, 0.0);
     }
 
     // FPS controls

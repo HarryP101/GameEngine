@@ -22,6 +22,7 @@ public:
     void Normalise();
 
     double Mag() const;
+    double MagSq() const;
 
     Vector3D operator+(const Vector3D& rhs) const;
     Vector3D& operator+=(const Vector3D& rhs);

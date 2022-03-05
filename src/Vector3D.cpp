@@ -32,7 +32,12 @@ void Vector3D::Normalise()
 
 double Vector3D::Mag() const
 {
-    return std::sqrt(m_x*m_x + m_y*m_y + m_z*m_z);
+    return std::sqrt(MagSq());
+}
+
+double Vector3D::MagSq() const
+{
+    return m_x*m_x + m_y*m_y + m_z*m_z;
 }
 
 Vector3D Vector3D::operator+(const Vector3D& rhs) const

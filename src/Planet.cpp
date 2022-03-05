@@ -16,18 +16,11 @@ Planet::Planet(double orbitRadius, double initialTheta, double depthIntoScreen, 
 
 }
 
-void Planet::UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRealSecond, const Vector3D& screenScaling)
+void Planet::UpdateScreenPosAndOrient(const Vector3D& screenScaling)
 {
     // TODO: update orientation
-    //(void)theta;
-
-    auto speed = std::sqrt(Constants::SOLAR_MASS * Constants::G / m_orbitRadius);
-    auto angularSpeed = speed / m_orbitRadius;
-
-    m_theta += angularSpeed * static_cast<double>(fElapsedTime) * simSecondsPerRealSecond;
 
     // Make sure to scale back to screen space...
-    // TODO make this clearer
     auto screenX = screenScaling.GetX() * m_orbitRadius * sin(m_theta);
     auto screenY = screenScaling.GetY() * m_orbitRadius * cos(m_theta);
 
@@ -35,6 +28,13 @@ void Planet::UpdateScreenPosAndOrient(float fElapsedTime, double simSecondsPerRe
     {
         m_transformedTriangles[i] = m_originalTriangles[i] + Vector3D(screenX, screenY, m_depthIntoScreen);
     }
+}
+
+void Planet::UpdatePosition(float fElapsedTime)
+{
+    m_speed = std::sqrt(Constants::SOLAR_MASS * Constants::G / m_orbitRadius);
+    auto angularSpeed = m_speed / m_orbitRadius;
+    m_theta += angularSpeed * static_cast<double>(fElapsedTime);
 }
 
 Planet::Colour Planet::GetColour() const
@@ -46,5 +46,12 @@ Planet::PlanetData Planet::GetPlanetData() const
 {
     auto cartesianX = m_orbitRadius * sin(m_theta);
     auto cartesianY = m_orbitRadius * cos(m_theta);
-    return PlanetData {Vector3D(cartesianX, cartesianY, m_z), Constants::EARTH_MASS};
+    Vector3D position(cartesianX, cartesianY, m_z);
+
+    auto velX = m_speed * cos(m_theta);
+    auto velY = m_speed * -sin(m_theta);
+
+    Vector3D velocity(velX, velY, 0.0);
+
+    return PlanetData {position, velocity, Constants::EARTH_MASS};
 }

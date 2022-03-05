@@ -3,9 +3,9 @@
 
 int main(int argc, const char* argv[])
 {
-	unsigned int simSecsPerRealSec = Constants::SECONDS_IN_A_WEEK * std::stoul(argv[1]);
+	unsigned int simSecsPerRealSec = 0.1 * Constants::SECONDS_IN_A_WEEK * std::stod(argv[1]);
 
-	unsigned int granularity = std::stoul(argv[2]);
+	double granularity = std::stod(argv[2]);
 
 	SandboxEngine demo(simSecsPerRealSec, granularity);
 

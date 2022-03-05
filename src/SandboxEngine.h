@@ -13,7 +13,7 @@
 class SandboxEngine : public olc::PixelGameEngine
 {
 public:
-	SandboxEngine(unsigned int simSecsPerRealSec, unsigned int granularity);
+	SandboxEngine(unsigned int simSecsPerRealSec, double granularity);
 
 	bool OnUserCreate() override;
 
@@ -21,7 +21,7 @@ public:
 
 private:
 	unsigned int m_simSecsPerRealSec;
-	unsigned int m_granularity;
+	double m_granularity;
 
 	Vector3D m_lookDirection;
 	ProjectionMatrix m_projectionMatrix;
